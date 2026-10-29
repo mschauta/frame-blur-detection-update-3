@@ -1111,8 +1111,10 @@ labels.
 - **The transfer of a photo-learned px scale to native frames** (R4T-1 failed; Update 3 tests it with frame
   supervision kept).
 - **How to anchor the px of a frame.** With a floating anchor the frame px shrink as the photo scale stretches
-  (Update 3, interim), so only their order carries over. Untried options: pin the frames' boundary to a chosen px,
-  or give frames a length target of their own.
+  (Update 3, interim), so their absolute value does not carry over. Pinning the frames' boundary to a chosen px
+  would fix only where the boundary lies: the frame logits would stay bounded, and the scale around the boundary
+  would still be the photos'. The scale needs a length signal on the frames themselves, for example measured motion
+  times the film's exposure factor (Section 2.3). Untried.
 - **Whether GOP-coded anchors remove the frame-type bias on film,** not only on photos (Update 3, items 5 and 6 of its
   protocol).
 - **Darkness:** input effect or real blur.
