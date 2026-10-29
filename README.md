@@ -126,8 +126,8 @@ transfers to film frames. That is not shown yet. An earlier photo-only test (R4T
 scale on photos, but on native frames it measured 17–29% of the frames that the VLM called clearly blurred (bbb) as
 under 1 px. Evaluation item 6 tests exactly this. Until it passes, a px value on a frame is a hypothesis.
 
-**Interim, validation frames:** the measured length follows the VLM codes, but its values shrink as training goes
-on.
+**Interim, validation frames:** the measured length of the whole frame, read from the frame score, follows the VLM
+codes, but its values shrink as training goes on.
 
 | median measured length | `sss` | `ssb` | `bsb` | `bbb` | `bbb` under 1 px |
 |---|---|---|---|---|---|
@@ -135,10 +135,16 @@ on.
 | epoch 12 | 0.02 px | 0.02 px | 2.80 px | 5.48 px | 4.3% |
 | epoch 15 | 0.01 px | 0.03 px | 1.69 px | 3.54 px | 8.4% |
 
-- **The cause is visible in the logits.** The frames' logits stay bounded, because noisy binary labels do not reward
-  larger values: the median `bbb` logit was 3.9 at epoch 0 and 4.6 at epoch 15. The photo offsets keep spreading:
-  b at 8 px went from 4.2 to 11.8. The same frame score therefore reads as fewer pixels.
-- **So with a floating anchor the px of a frame is not anchored; its order is.**
+- **Two causes are possible, and the frame score cannot separate them:**
+  - **the scale:** the frames' logits stay bounded, because noisy binary labels do not reward larger values (the
+    median `bbb` logit was 3.9 at epoch 0 and 4.6 at epoch 15), while the photo offsets keep spreading (b at 8 px:
+    4.2 → 11.8). The same frame score then reads as fewer pixels;
+  - **the readout:** the frame score is a log-mean-exp of the cell logits with the learned sharpness r. When a share
+    k / n of the cells is blurred, the frame score is about log(n / k) / r below those cells. r fell from 2.98 to
+    0.72 during training, so for local blur the frame reads ever lower than its blurred cells. For uniform blur the
+    frame score equals the cells', and this cause does not apply.
+- **One px per frame is the wrong object anyway:** a frame can carry camera blur and subject blur at once. The cell
+  map is what has to hold the px. Whether the cell px keep their scale is not yet measured (items 4 and 6).
 - **The share of `bbb` frames under 1 px is partly met by construction.** The frame label trains the same score s
   that the px scale reads, so a frame the model calls blurred cannot measure much under the boundary: the `bbb`
   frames under 1 px are roughly those the model calls sharp (7.8% at epoch 15).
@@ -212,8 +218,8 @@ The proposed criteria are in the protocol; the decision is the author's. Four ca
   and 6.
 - **Item 6 is partly met by construction too** (noted at epoch 12): the VLM label trains the score that the px scale
   reads, so the order of the VLM codes in px follows from the frame decision. What it cannot force is the order
-  inside a class and the agreement with the measured motion. The absolute px of a frame is not anchored at all
-  (noted at epoch 15, above).
+  inside a class and the agreement with the measured motion. The frame-level px shrinks during training (noted at
+  epoch 15, above), so the px are judged on the cell map.
 - **One run, three changes:** the coding, the continuous ladder and the dropped masks. If the result improves, the
   causes cannot be separated without the other runs of the 2×2 design (photo coding × ladder shape).
 - **Six held-out films:** the intervals describe the uncertainty over their shots, not over other films.
