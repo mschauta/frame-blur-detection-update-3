@@ -22,6 +22,8 @@ what it did, measured on the models of the series, and how to set it:
 - **The generations:** Generation 1 learns from VLM-labelled frames and the photo ladder; Generation 2 learns from
   Generation 1's cell maps of every frame and the photo ladder. It covers what a generation inherits, what it gets
   anew, how the dependence on the VLM changes, and whether the student has surpassed its teacher so far.
+- **Binary, length or blur mass:** whether blur can be a class at all, what each kind of output can say, where each
+  fails, and which separates most cleanly.
 - **The parts:** the dataset of native frames; the VLM teacher; the non-learned motion measurement; the frame
   selection; the photo ladder as etalon and regulariser, including what each step of the coding chain simulates;
   the signed edge fingerprint; the detector.
