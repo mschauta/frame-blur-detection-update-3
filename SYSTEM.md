@@ -328,6 +328,10 @@ while not losing more than a fixed margin on the VLM labels:
   is 0.68. A px cut is best set on a threshold of the grid.
 - **With frame supervision beside it, the frame boundary gets a px position that nothing pins.** Photos and frames
   meet only in the shared network, and the position moves during training (Section 12.3).
+- **With a floating anchor, the px of a frame is an order, not a length.** Under noisy binary labels the frame logits
+  stay bounded, while the photo offsets keep spreading to fit lengths up to 30 px. The same frame score then reads as
+  fewer px as training goes on. Update 3, interim: the median `bbb` frame read 7.7 px at epoch 0 and 3.5 px at
+  epoch 15, with its median logit at 3.9 and 4.6.
 
 ### 3.4 The blur mass M (Update 2)
 
@@ -379,7 +383,8 @@ over the inner cells.
   - M loses the length.
 
 **The approach that follows from this.** Update 3 starts this design; it is not yet validated.
-1. **Measure per cell, in px:** frame supervision says where, photo supervision says how much.
+1. **Measure per cell, in px:** frame supervision says where, photo supervision says how much. For this the frame px
+   must be anchored; with a floating anchor they are only an order (Section 3.3).
 2. **Derive the frame readouts from that map:**
    - the worst cell's length, for strictness;
    - the share of the frame above a given length, a generalised M, for tolerance (for example "at most 3% of the
@@ -881,7 +886,8 @@ in the original runs, 48,000 in Update 1 and Update 3.
 | a self-supervised trunk (DINOv3) | slower, with larger swings; it settles late | it reaches its level only after about epoch 45 of 60 |
 | transfer from photo-only training to frames | highest at the start, then lost | R4T-1 without mosaic: confident AUC 0.943 after one epoch, falling to 0.862 by epoch 9 as the model specialises on photos |
 | the coded frame type on photos, when GOP-coded photos are taught | within two epochs | Update 3 validation photos: no I versus P/B gap by epoch 2, none at epoch 12 (0 px: 0.03 against 0.02 px; interim) |
-| where the frame boundary falls on the photo length (floating anchor) | it moves for several epochs | Update 3: the true photo length at which the frame decision flips was 3.0, 2.5, 4.0 px in epochs 0–2 and 1.75–2.11 px in epochs 7–12; the zero of the offsets b_k fell from 3.21 to 1.28 px and was still falling at epoch 12 (interim) |
+| where the frame boundary falls on the photo length (floating anchor) | it keeps moving | Update 3: the true photo length at which the frame decision flips was 3.0, 2.5, 4.0 px in epochs 0–2, 1.75–2.11 px in epochs 7–12 and 1.23–1.59 px in epochs 13–15; the zero of the offsets b_k fell from 3.21 to 1.11 px and was still falling at epoch 15 (interim) |
+| the px of a frame (floating anchor) | it shrinks as the photo scale stretches | Update 3: median `bbb` frame 7.7 → 5.5 → 3.5 px at epochs 0 / 12 / 15, while its median logit stayed at about 4–7 (interim) |
 | memorising repeated frames | continuously, as long as frames repeat | original runs: training AUC rises to 0.992–0.997 while validation flattens after the third pass |
 | calibration and confidence | never settles | the threshold that maximises balanced accuracy swings from epoch to epoch (Update 1 Small: 0.10–0.89); the NLL drifts up while the ordering improves (original RGB: 0.41 → 0.58); the LSE sharpness r drifts down (Update 1: 4.1 → 0.86) |
 | the last gains | in the learning-rate decay | Update 1 Base: new highs at epochs 21–22 and the best at 29; Update 2: 17.5% of the fit in the last four epochs (Section 12.2) |
@@ -893,10 +899,11 @@ in the original runs, 48,000 in Update 1 and Update 3.
   sharpest-looking blurred frames. These keep improving as new frames arrive and as the learning rate falls. They are
   why a run is not stopped at its first plateau.
 - **Never converges:** calibration. Read decisions from recall points, not from the score as a probability.
-- **Interim, Update 3:** one epoch gave a frame AUC of 0.913, against 0.875 for Update 1 Small. Over epochs 0–12 the
-  mean was 0.935 against 0.927, but by epochs 9–12 the two were level (0.945 against 0.944), and Update 1 Small kept
-  more sharp frames at 98% (51.5% against 47.8% on average). With one run per recipe, this does not show that the
-  continuous GOP-coded ladder speeds up learning; it does show no loss on the frames so far.
+- **Interim, Update 3:** one epoch gave a frame AUC of 0.913, against 0.875 for Update 1 Small. Over epochs 0–15 the
+  mean was 0.939 against 0.931, and Update 3 was ahead in 13 of the 16 epochs. The lead varies: level in epochs 9–12
+  (0.945 against 0.944), ahead in epochs 13–15 (0.953 against 0.948; sharp frames kept at 98%: 58.1% against 54.2%).
+  With one run per recipe, this does not show that the continuous GOP-coded ladder speeds up learning; it does show
+  no loss on the frames so far.
 
 ### 12.4 Choosing the checkpoint
 
@@ -1103,6 +1110,9 @@ labels.
 - **The photo : frame ratio,** isolated from other changes.
 - **The transfer of a photo-learned px scale to native frames** (R4T-1 failed; Update 3 tests it with frame
   supervision kept).
+- **How to anchor the px of a frame.** With a floating anchor the frame px shrink as the photo scale stretches
+  (Update 3, interim), so only their order carries over. Untried options: pin the frames' boundary to a chosen px,
+  or give frames a length target of their own.
 - **Whether GOP-coded anchors remove the frame-type bias on film,** not only on photos (Update 3, items 5 and 6 of its
   protocol).
 - **Darkness:** input effect or real blur.
