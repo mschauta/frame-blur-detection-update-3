@@ -17,7 +17,7 @@ Each number names its model. The training data is private (copyrighted videos an
 checked against the published evidence but not recomputed from the data.
 
 **Scope.** Everything below was measured on one kind of material: human-centred, handheld-camera video, H.264, 1080p,
-4:2:0, with 173 videos. What carries over to other material is discussed in Section 14.
+4:2:0, with 173 videos. What carries over to other material is discussed in Section 16.
 
 ## 1. Definitions the system rests on
 
@@ -30,11 +30,154 @@ checked against the published evidence but not recomputed from the data.
   choice made when filtering, not a property of the picture.
 - **Blur is positive evidence; sharp is its absence.** One clearly blurred region is enough to call a frame blurred.
   A model that has never learned a kind of blur will call it sharp, which is why a model's "sharp" is the less
-  reliable verdict (Section 11).
+  reliable verdict (Section 12).
 - **Witnesses are not targets.** The VLM labels and the motion measurement check the detector. It is never tuned to
   resemble them: where they disagree, the question is who is right, not how to agree.
 
-## 2. The parts at a glance
+## 2. Generations: how the model changes, and whether the student can surpass its teacher
+
+### 2.1 The scheme
+
+Every model of the series belongs to one of two generations. Both combine native frames with the photo ladder, and
+both end in a model that runs without the VLM, gives a cell map, and is thresholded when filtering. They differ in
+where the frame targets come from.
+
+```mermaid
+flowchart LR
+  subgraph G1["Generation 1"]
+    V["VLM teacher<br/>three yes / no questions"] --> F1["selected native frames<br/>binary VLM label per frame"]
+    F1 --> M1["model 1<br/>cell map + frame score"]
+    P1["photo ladder<br/>exact blur length"] --> M1
+  end
+  M1 -->|"scores every frame"| T["cell map of every frame<br/>no VLM involved"]
+  subgraph G2["Generation 2"]
+    T --> M2["model 2<br/>cell map + frame value"]
+    P2["photo ladder<br/>exact blur length"] --> M2
+  end
+```
+
+- **Generation 1:**
+  - **frames:** a selected set of native frames with a binary VLM label each (Update 1: 589,663 frames, chosen from
+    the 1,019,201 labelled ones);
+  - **photos:** the ladder;
+  - **result:** model 1, which scores frames without the VLM and gives a cell map the VLM never had.
+- **Generation 2:**
+  - **frames:** every frame of the training videos (Update 2: 4,850,458), most of them never labelled. Each carries
+    model 1's cell map as a soft target, and no VLM label is used;
+  - **photos:** the ladder again;
+  - **result:** model 2, with the same kind of output.
+
+**The models of the series in this scheme:**
+
+| | binary photo ladder | continuous photo ladder |
+|---|---|---|
+| Generation 1 (VLM labels) | Update 1, Base and Small (0–3 / 16–30 px) | Update 3 (0–30 px, GOP-coded), in training |
+| Generation 2 (model 1's maps) | Update 2 (0–3 / 10–30 px, a stricter blurred side) | not yet run: it would learn Update 3's maps, if Update 3 passes |
+
+### 2.2 What a generation inherits, and what it gets anew
+
+| source | what it gives | in which generation |
+|---|---|---|
+| the teacher's frame targets | where the transition lies on native frames: the VLM's in Generation 1, model 1's in Generation 2 | inherited, in both |
+| the teacher's consistent errors | for example the frame-type bias (Section 8.3) | inherited, unless an independent signal removes them |
+| the photo ladder | the strictness at the ends, and from a continuous ladder the px scale | anew, in every generation, independent of any teacher |
+| the data | coverage: Generation 2 learns from 8× as many frames, most of which model 1 had only scored | grows with each generation |
+| the motion measurement | a veto where the teacher is probably wrong (Section 14) | in Generation 2 |
+| the start | ImageNet weights, not the teacher's: the map is learned again, not copied | every generation |
+
+**This is why the ladder must be present in every generation.** It is the only part of the target that no teacher
+produced. When it changes, the student changes with it, whatever the teacher says. Update 2's blurred photos started
+at 10 px instead of 16 px, and its decision on the photo ladder moved from about 9.1 px to about 6.9 px.
+
+### 2.3 How the dependence on the VLM changes
+
+- **Generation 1 learns the VLM's boundary but not its strictness.** The strictness comes from the etalon.
+  - **The departure is measurable at the strict point** (Update 1 Base, partial corpus scoring, *lab notebook*). On
+    the same fully scored videos, the VLM's sharp : blurred ratio is 1.6–3.4 : 1, the model's at r98 0.7–1.2 : 1.
+  - **The disagreements are mostly one-sided:** most are "model blurred, VLM sharp", and on most of these the motion
+    measurement sides with the model. The reverse occurs on about 1.4% of the labelled frames.
+  - **It also gives what the VLM cannot:** a cell map that follows the motion (within-frame Spearman 0.34), at 65–87
+    frames/s instead of about 0.5.
+- **Generation 2 uses no VLM label, but the VLM's boundary lives on in model 1's maps.** The dependence is
+  transformed, not removed:
+  - **what disappears:** the VLM's frame-by-frame noise and its film-level offsets (which the film-relative `ssb`
+    rule had to correct);
+  - **what remains:** where the transition lies.
+- **The threshold becomes VLM-independent step by step:**
+  1. Generation 1, binary ladder: recall points on VLM-labelled validation frames. The scale is the model's, but the
+     operating points are defined against the VLM.
+  2. Generation 2: M > 0, "no cell says blur", is defined without the VLM. Its recall points are still read off
+     VLM-labelled frames for comparison.
+  3. A continuous ladder: a px threshold, defined on the etalon alone. That it means the same on native frames is the
+     open condition (R4T-1 failed it; Update 3 tests it with the frame supervision kept).
+
+### 2.4 Can the student surpass its teacher?
+
+**How it can:**
+- **An independent signal in its target:** the photo etalon, which sets strictness and scale regardless of the
+  teacher.
+- **Averaging:** on more and more varied data, the teacher's random errors average out. Self-training literature
+  reports students better than their teachers: Xie et al., *Self-training with Noisy Student*, CVPR 2020;
+  Furlanello et al., *Born-Again Neural Networks*, ICML 2018.
+- **Richer targets:** a soft value per cell keeps the strength of the evidence. A pattern that co-occurs with the
+  teacher's verdict (a local subject motion beside a global blur, for example) can be learned although the teacher
+  did not rely on it.
+- **A veto:** the measurement blocks the cells where the teacher is probably wrong.
+- **A fresh start:** a new model from ImageNet re-learns the map instead of copying its weights.
+
+**What limits it:**
+- **Consistent errors are inherited.** Averaging does not remove an error the teacher makes every time, such as the
+  frame-type bias. Only a signal the teacher did not produce removes it: GOP-coded photos, a codec-consistency test.
+- **What the teacher never saw is extrapolation:** `sbb` and `bss` frames, overlays, and material outside the corpus.
+- **Agreement with the teacher cannot show it.** A student that is better than its teacher looks worse when measured
+  against that teacher. Surpassing can only be shown on witnesses the teacher did not produce (Section 15).
+
+**The evidence so far.**
+
+*Generation 1 against the VLM: partly surpassed.*
+
+| | the VLM teacher | Update 1 |
+|---|---|---|
+| strictness | tolerant: `sss` can hide 3–5 px | set by the 0 px etalon; at r98 it rejects more, and the measurement mostly sides with it |
+| where the blur is | not given | a cell map that follows the motion |
+| speed | about 0.5 frames/s | 65–87 frames/s |
+| close-ups | judged well (the measurement fails there) | stricter: 57.5% of the close-up sharp frames kept, against 79.3% of the others (validation films, at the threshold that lets at most 1% of the confident-blurred frames pass). Whether it is right is not known |
+| deliberate background defocus | judges the composition: a sharp subject passes | a soft background raises the frame score |
+
+It surpasses the VLM in strictness, localisation and speed, not in judging a composition.
+
+*Generation 2 against Generation 1: not surpassed.*
+
+| witness | Update 1 | Update 2 | reading |
+|---|---|---|---|
+| VLM labels, six held-out films, AUC | 0.963 | 0.959 | slightly lower; the VLM label is Update 1's kind of target |
+| Spearman with the measured motion | 0.691 | 0.685 | equal |
+| photo ladder, 50% flip | 9.1 px | 6.9 px | stricter, from the ladder change, not from the maps |
+| order inside 0–3 px on photos | 0.617 (frame score) | 0.824 (mean inner cell logit, exploratory); M ties | the map holds more order, on photos |
+| R4K-1: the shot-start I-frame scored sharper than the next two frames | 93.4% | 86.2% | inherited, weaker |
+| R4K-1: the sharpest frame per 20 s window is an I-frame, × the expected share | 76× / 32× | 41× / 1.7× | smaller, mostly through M = 0 ties |
+| frames with M = 0 | 17.8% (its own M) | 29.1% | more ties |
+
+Update 2 changed where its etalon changed. It inherited the frame-type bias in a weaker form. On the independent
+witnesses it did not improve on its teacher, so its distillation did not yet surpass the teacher.
+
+**What would show a student surpassing its teacher next time.** It would have to improve on independent witnesses
+while not losing more than a fixed margin on the VLM labels:
+- a higher Spearman with the measured motion, at frame and cell level;
+- more consistent scores across the same frames in AVC, HEVC and AV1, and across two releases of a film;
+- a better order inside 0–3 px on the photo ladder;
+- no I-frame preference when ranking.
+
+### 2.5 The next step in this scheme
+
+- **Generation 1 with a continuous ladder (Update 3)** is in training. Its protocol decides whether it reduces the
+  frame-type bias without losing frame accuracy, and whether its px scale holds on native frames.
+- **If it passes, it becomes the teacher of a Generation 2 with a continuous ladder.** Its cell maps, and possibly its
+  px, over the whole corpus; the continuous GOP-coded ladder; the measurement veto; a fresh ImageNet start.
+- **The conditions for any further generation** are in Section 14: new material, the same six held-out films never
+  trained on, the photo anchors kept, and a stop when a generation does not improve on the witnesses.
+
+## 3. The parts at a glance
 
 | part | what it is | used for | not used for |
 |---|---|---|---|
@@ -48,12 +191,12 @@ checked against the published evidence but not recomputed from the data.
 | distillation | the detector's own outputs as targets over the whole corpus | coverage, spatial targets, speed | proof of accuracy |
 | witnesses | held-out films, confident frames, motion, photo ladder, two releases, codec tests | evaluation | training |
 
-## 3. The dataset: native frames
+## 4. The dataset: native frames
 
 **Extraction.**
 - Every frame is decoded at the video's own frame rate and stored losslessly as PNG.
 - The stored frame is exactly the decoded picture: the source's coding artefacts belong to it, and nothing is added.
-- The pipeline has no JPEG step, which is why JPEG robustness is not a goal (Section 7.3).
+- The pipeline has no JPEG step, which is why JPEG robustness is not a goal (Section 8.3).
 - Frames with burnt-in subtitles or overlay text are excluded.
 - A content filter keeps frames with luminance standard deviation ≥ 1, entropy ≥ 1 bit, and at most 90% over- or
   under-exposed pixels.
@@ -67,7 +210,7 @@ checked against the published evidence but not recomputed from the data.
   update, nor was any release of them.
 
 **Watermarks.** Every frame of the corpus carries a semi-transparent watermark at a fixed position per video. A
-per-video validity mask (SAM3-assisted) marks it. Section 7.6 explains how the training treats it.
+per-video validity mask (SAM3-assisted) marks it. Section 8.6 explains how the training treats it.
 
 **What is unknown, and stays unknown:**
 - **The blur length.** The exposure time is not known. The motion measurement gives the displacement between
@@ -75,7 +218,7 @@ per-video validity mask (SAM3-assisted) marks it. Section 7.6 explains how the t
   of the inter-frame motion, which is about 1/100 s at 30 fps. It varied from 0.07 to 0.65 between films (R4T-1, *lab
   notebook*).
 - **The blur map.** No frame says where it is blurred. There is no pixel or cell truth on frames. Cell targets on
-  frames can only come from a model (Section 12).
+  frames can only come from a model (Section 14).
 
 **Scale used here:** 173 videos (H.264, 1920 × 1080, 4:2:0) and 5,010,602 frames. A VLM label exists for 1,019,201
 of them.
@@ -83,7 +226,7 @@ of them.
 **What the dataset is for.** The native frames are the asset. Everything else (labels, photos, models) exists to
 judge them, and a method that works only on synthetic material does not count.
 
-## 4. The teacher: VLM labels
+## 5. The teacher: VLM labels
 
 **The model.** A frozen Qwen3.5-4B (bf16). Its code and weights are identified by hash, and three control images are
 replayed before every labelling session.
@@ -120,7 +263,7 @@ replayed before every labelling session.
 **Role.** Supervision for the decision boundary, and a reference. The decision is not distilled from the VLM
 as such: the photo etalon sets the strictness, and the VLM sets where the transition lies on frames.
 
-## 5. The witness: the motion measurement
+## 6. The witness: the motion measurement
 
 **What it measures.** The camera motion (the median over 256 px tiles) and the regional motion (residual displacement
 after camera compensation, in 160 px cells). The value comes from three frame pairs around a frame, and the smallest
@@ -142,7 +285,7 @@ Spearman 0.71 with regional motion) learned the motion from the pictures, not fr
 close-ups, and shot size could not be determined reliably. It ranks well inside a shot but has no absolute
 boundary.
 
-## 6. Frame selection (the v8 rules)
+## 7. Frame selection (the v8 rules)
 
 | rule | what it does | why |
 |---|---|---|
@@ -150,7 +293,7 @@ boundary.
 | sharp = `sss` (+ film-relative `ssb`), blurred = `bbb` + `bsb` | clean classes | contradictory codes are noise |
 | per shot, the sharp frames lose their largest 20% by measured motion, and each blurred code loses its smallest 10% | removes the frames most likely mislabelled | the measurement only ranks inside a shot |
 | at least one frame per shot and class stays | every shot contributes | scene variety |
-| no thinning: every remaining labelled frame is a sample, neighbours included | many similar frames instead of a few repeated | Section 10.1 |
+| no thinning: every remaining labelled frame is a sample, neighbours included | many similar frames instead of a few repeated | Section 11.1 |
 | validation and test 1 : 1 per film | balanced evaluation | — |
 
 Result for Update 1: 589,663 training frames (349,624 sharp, 240,039 blurred).
@@ -163,9 +306,9 @@ Result for Update 1: 589,663 training frames (349,624 sharp, 240,039 blurred).
 - **Photos form one pool, with no stratum per source.** The pattern is taught, not the source.
 - **No per-video weighting.** The selection decides which frames take part, and the sampler does not re-weight them.
 
-## 7. The etalon and regulariser: the photo ladder
+## 8. The etalon and regulariser: the photo ladder
 
-### 7.1 The originals
+### 8.1 The originals
 
 - **Material:** 48,797 originals, the same pool in every update, split before any variant is made:
   - camera-EXIF photos, split by shoot group;
@@ -182,7 +325,7 @@ Result for Update 1: 589,663 training frames (349,624 sharp, 240,039 blurred).
 - **What L = 0 means:** no added blur. It is a sharp composition, which can include deliberate background defocus. It
   is not a claim that every region is in focus.
 
-### 7.2 The synthetic blur
+### 8.2 The synthetic blur
 
 - **Uniform straight camera motion of length L,** in 12 directions (every 15°) or any angle, applied in linear light.
 - **Kernel v2:** the motion segment is convolved with the tent (linear-interpolation) reconstruction of the image,
@@ -192,10 +335,10 @@ Result for Update 1: 589,663 training frames (349,624 sharp, 240,039 blurred).
   edge copies: 7 copies about 6.3 px apart on one inspected pair. That is not native blur, and a fingerprint model
   can mistake it for a sharp pattern. Such data serves as a test, not as training material (original README).
 
-### 7.3 The coding chain: what it simulates
+### 8.3 The coding chain: what it simulates
 
 A photo reaches the model only after the same kind of coding a frame went through. The signed edge fingerprint
-(Section 8) is a high-pass residual, so it shows everything the coding does at the finest scale. Each step of the chain
+(Section 9) is a high-pass residual, so it shows everything the coding does at the finest scale. Each step of the chain
 exists to make one coding property the same on photos and frames, so that the model cannot use it as a shortcut.
 
 1. **The noise floor.**
@@ -223,7 +366,7 @@ exists to make one coding property the same on photos and frames, so that the mo
      - **R4K-2** (sharp photos, controlled): the same sharp source frame coded as P/B scores 7–14 logits blurrier
        under Update 1 (at CRF 23 and 2 Mbit/s, and in the panning clips). With I-frames only, false alarms are
        0.0–0.2%. Over all 115,200 test frames, Update 1 Small calls 2.4% blurred and the Base 1.7% (r95).
-     - **The labels do not cause it** (Section 4). The coding path does.
+     - **The labels do not cause it** (Section 5). The coding path does.
    - **Update 3's fix:** the photo goes through an 8-frame clip (x264 / x265 / AV1; I-only, IP or IPB; whole-pixel
      pans; film grain on part of the AV1 samples), and the sample is one decoded frame of it. About 70% of the photo
      samples are inter frames.
@@ -234,13 +377,13 @@ exists to make one coding property the same on photos and frames, so that the mo
 **The rule behind it:** degrade the etalon only to the level of good video, so that good frames can pass. Bad
 quality is filtered out, never taught as acceptable.
 
-### 7.4 Lengths and classes
+### 8.4 Lengths and classes
 
 | | sharp | blurred | between | result |
 |---|---|---|---|---|
 | original, Update 1 | 0, 1, 2, 3 px | 16, 20, 24, 30 px | 4–15 px not trained | easy separation; the decision flips at about 9 px on the photo ladder; no order inside 0–3 px (pair order 0.62 Base, 0.66 Small) |
 | Update 2 | 0–3 px | 10, 12, 16, 20, 24, 30 px | 4–9 px not trained | the flip moves to about 6.9 px, inside the gap |
-| R4T-1 (photos only) | continuous 0–30 px, as a length | | — | orders 0–3 px on photos (0.945); fails on frames (Section 12) |
+| R4T-1 (photos only) | continuous 0–30 px, as a length | | — | orders 0–3 px on photos (0.945); fails on frames (Section 13) |
 | Update 3 | continuous 0–30 px, as a length | | — | in training |
 
 **Why the gap at first.** The 0–3 px tolerance was set with the VLM: up to 3 px it answers on blurred photos as
@@ -253,7 +396,7 @@ range. A frame score saturates at both ends.
 **Why a continuous ladder now.** Phase II (the sharpest frame per time window) needs an order inside the sharp
 range. The ladder then defines a px scale, and the class is chosen at filtering time.
 
-### 7.5 Targets on photos
+### 8.5 Targets on photos
 
 - **Image level:** the class (Update 1, Update 2) or the ordinal length targets (R4T-1, Update 3).
 - **Cell level (the dense term, weight 0.5):** every cell that has structure on the original photo gets the photo's
@@ -265,7 +408,7 @@ range. The ladder then defines a px scale, and the class is chosen at filtering 
   edge energy even at 20 px (*lab notebook*). Untextured surfaces are the visibility limit of any local detector.
 - **The outer cell ring** was left untaught in Update 2.
 
-### 7.6 Watermark masks
+### 8.6 Watermark masks
 
 - **Update 1:** half of the photo samples and half of the frame samples carry a watermark validity mask taken from
   the frames.
@@ -280,7 +423,7 @@ range. The ladder then defines a px scale, and the class is chosen at filtering 
 - **The consequence of either choice:** the model is blind to overlays by design. Captions, graphics and animation
   are out of scope.
 
-### 7.7 Presence, ratio and mosaic
+### 8.7 Presence, ratio and mosaic
 
 **Always present.** Photos are in every epoch from the first step to the last, beside the frames. They are the
 only exact signal, so they anchor the scale while the noisy frame labels pull the decision.
@@ -311,7 +454,7 @@ it kept the transfer to frames at image level: confident AUC 0.931 against 0.862
 the cell map where motion is: the within-frame Spearman with the measured subject motion was 0.007, against 0.34 for
 Update 1.
 
-## 8. The input: the signed edge fingerprint
+## 9. The input: the signed edge fingerprint
 
 **Definition:**
 - `d = Y − K * Y`, where Y is the linear-light luminance (Rec. 709) and K = [3 10 3; 10 92 10; 3 10 3] / 144. K is
@@ -327,7 +470,7 @@ Update 1.
   polarity.
 - **Blur:** the edges thicken first. A clean displacement doubles the contours, and motion blur makes parallel bands
   along its direction.
-- **Everything else at the finest scale:** texture, noise and coding artefacts. Hence Section 7.3.
+- **Everything else at the finest scale:** texture, noise and coding artefacts. Hence Section 8.3.
 
 **Precision.**
 - **Up to the original runs:** the convolution ran inside bf16 autocast. The error was of the order of the signal
@@ -365,7 +508,7 @@ Compute the fingerprint exactly as at training: a model trained on the rounded i
 relative to the image's p99 scale, which looks blur-like. Poorly lit frames were marked blurred on film material. A
 test on synthetically darkened 0 px photos would separate the input effect from real blur.
 
-## 9. The detector
+## 10. The detector
 
 **Trunk:** the original ConvNeXt (torchvision implementation, not ConvNeXt V2), up to stride 16.
 - **Adapted first layer:** the fingerprint channel starts from the sum of the pretrained RGB filters, the mask channel
@@ -418,17 +561,17 @@ films):
 - **Deliberate background defocus:** a soft background raises a sharp subject's frame score. A cell map with a subject
   mask, or a crop that is re-scored, handles it.
 - **A small, dark, low-contrast moving region:** it is missed.
-- **Untextured surfaces:** blur there is invisible (Section 7.5).
+- **Untextured surfaces:** blur there is invisible (Section 8.5).
 
-## 10. Training
+## 11. Training
 
-### 10.1 Repetition: every sample new, or the same sample again
+### 11.1 Repetition: every sample new, or the same sample again
 
 **The principle** (the author's): the model should see many similar samples, each about once, rather than the same
 samples repeatedly.
 - Neighbouring frames of a shot are near-permutations of one picture, as the grid variants of a photo are. Learning
   from them is continuous and dynamic.
-- Labelled frames are therefore never thinned, de-duplicated or capped (Section 6).
+- Labelled frames are therefore never thinned, de-duplicated or capped (Section 7).
 - Photos are never repeated: each draw is a new variant.
 
 **How often each run actually saw a sample:**
@@ -456,7 +599,7 @@ samples repeatedly.
 - Let the photos supply a fresh variant on every draw.
 - Track "seen against not yet seen" AUC on a fixed training subset: if the two part, the model is memorising.
 
-### 10.2 Learning rate, schedule and noise
+### 11.2 Learning rate, schedule and noise
 
 **Settings shared by every run of the series:**
 - **Optimiser:** AdamW, learning rate 1e-4 for the trunk and 1e-3 for the head, weight decay 0.05.
@@ -504,7 +647,7 @@ Compare runs by means over passes or by the fixed last epoch, never by single ep
 can be extended when new data arrives, and the gain comes in the short decay. Update 2 used it; a direct comparison on
 the same data has not been run.
 
-### 10.3 What is learned fast, and what slowly
+### 11.3 What is learned fast, and what slowly
 
 The per-epoch evaluations show a consistent order. Epoch numbers refer to each run's own epoch size: 12,000 samples
 in the original runs, 48,000 in Update 1 and Update 3.
@@ -523,7 +666,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
 | the coded frame type on photos, when GOP-coded photos are taught | within two epochs | Update 3 validation photos: no I versus P/B gap by epoch 2 (interim) |
 | memorising repeated frames | continuously, as long as frames repeat | original runs: training AUC rises to 0.992–0.997 while validation flattens after the third pass |
 | calibration and confidence | never settles | the threshold that maximises balanced accuracy swings from epoch to epoch (Update 1 Small: 0.10–0.89); the NLL drifts up while the ordering improves (original RGB: 0.41 → 0.58); the LSE sharpness r drifts down (Update 1: 4.1 → 0.86) |
-| the last gains | in the learning-rate decay | Update 1 Base: new highs at epochs 21–22 and the best at 29; Update 2: 17.5% of the fit in the last four epochs (Section 10.2) |
+| the last gains | in the learning-rate decay | Update 1 Base: new highs at epochs 21–22 and the best at 29; Update 2: 17.5% of the fit in the last four epochs (Section 11.2) |
 
 **How to read it:**
 - **Fast:** what the exact signal states plainly (the photo extremes) and what the pretrained edge and texture
@@ -535,7 +678,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
 - **Interim, Update 3:** one epoch gave a frame AUC of 0.913, against 0.875 for Update 1 Small. With one run per
   recipe, this does not show that the continuous GOP-coded ladder speeds up learning.
 
-### 10.4 Choosing the checkpoint
+### 11.4 Choosing the checkpoint
 
 - **Fix it before training:** the last epoch (the original runs, Update 1, Update 2, Update 3).
 - **Why not the best validation epoch:** picking the validation peak also picks the validation noise, and a weight
@@ -544,7 +687,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
   deliberate defocus. Late weights flag less of both, and no single epoch was best on all of three inspected scenes.
   That is another reason not to choose by examples.
 
-## 11. Readouts and thresholds: how to set each model
+## 12. Readouts and thresholds: how to set each model
 
 **The general rules:**
 - **Operating points are set on the validation frames as recall points:** r90 / r95 / r98 is the threshold that
@@ -586,7 +729,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
 - **Unknown video:** spot-check with the VLM. The extremes (lowest and highest scores) should agree almost 100%, and
   the VLM's blurred share should rise steadily across score bands; a break marks a blind spot.
 
-## 12. The models and what each measures
+## 13. The models and what each measures
 
 **Published models:**
 
@@ -626,11 +769,11 @@ anchored at 1 px).
 | round 1 | videos giving one class | the model learned the video (AUC about 0.5) |
 | round 1d | sharp = the original photo only, 16–30 px blurred, the middle untrained | the middle band read as sharp: at p > 0.5 only 6.5–14% of `sss` frames were called blurred |
 | round 1e | frames on the blurred side only | "frame = blur"; the mask channel gave the frames away |
-| round 2 | DINOv3 trunk | behind ImageNet (Section 9) |
+| round 2 | DINOv3 trunk | behind ImageNet (Section 10) |
 | round 3, scratch | Base from random weights | AUC 0.65 after three epochs |
 | v9 v1 | Update 2 with an edge threshold on frame cells | 76% of the inner frame cells, and 90% of the strong blur cells, were never taught, because blur removes edges. Stopped; v2 teaches every cell |
 
-## 13. Distillation: labelling the dataset with the learned signal
+## 14. Distillation: labelling the dataset with the learned signal
 
 **The chain:**
 1. The VLM labels about a fifth of the frames.
@@ -661,11 +804,11 @@ anchored at 1 px).
 - noise only of kinds that do not change blur (flips, turns, re-coding);
 - stop when a round does not improve on the witnesses.
 
-**Pseudo-labels** follow the asymmetry of Section 11. The blurred verdict can be taken more widely, the sharp
+**Pseudo-labels** follow the asymmetry of Section 12. The blurred verdict can be taken more widely, the sharp
 verdict only at a strict threshold. Frame types the teacher never saw (`sbb`, `bss`, overlays) get extrapolated
 labels.
 
-## 14. Evaluation: the witnesses and what each can show
+## 15. Evaluation: the witnesses and what each can show
 
 | witness | what it shows | what it cannot show |
 |---|---|---|
@@ -686,15 +829,15 @@ labels.
 - State the paired difference with a bootstrap over shots, and say that it covers these films' shots, not other films.
 - Report every pre-registered measure, deviations included.
 
-## 15. Universality: what generalises and what does not, so far
+## 16. Universality: what generalises and what does not, so far
 
 **What makes the decision source-independent:**
 - **The etalon:** sharp is a 0 px professional photo, not the best frame of a video.
-- **The coding chain matched to the target material** (Section 7.3), and from Update 3 on, to its frame types and
+- **The coding chain matched to the target material** (Section 8.3), and from Update 3 on, to its frame types and
   codecs.
 - **Film-relative label rules,** which remove a film-level offset of the teacher.
 - **Films as units, two releases, held-out films** chosen for variety.
-- **An input that depends less on the general look of the image** (Section 8).
+- **An input that depends less on the general look of the image** (Section 9).
 
 **Shown out of the training material:**
 - **A drama series:** the blur spots fall in the right places by the author's inspection.
@@ -708,7 +851,7 @@ labels.
 - other resolutions, HDR, and codecs other than H.264 (untested before Update 3);
 - a single seed per run.
 
-## 16. Recipe: building a dataset and a model
+## 17. Recipe: building a dataset and a model
 
 1. **Frames:** decode every frame losslessly at its native rate. Find shots, films and duplicate releases. Mark
    overlays and watermarks. Choose held-out films by hand, for variety, and never train on them in any generation.
@@ -725,17 +868,17 @@ labels.
    needed. Keep photos in every epoch. Start at 1 : 1 photo : frame and treat the ratio as a variable to test.
 8. **Input:** the signed edge fingerprint in float32, normalised per image, with a validity channel. If masks are
    used, use a leak-free mask on both photos and frames.
-9. **Model:** ConvNeXt-Small or Base from ImageNet weights (Section 9 for the choice), a 16 px cell head, a readout
-   chosen for the task (Section 9), and dense photo targets on cells structured in the original.
+9. **Model:** ConvNeXt-Small or Base from ImageNet weights (Section 10 for the choice), a 16 px cell head, a readout
+   chosen for the task (Section 10), and dense photo targets on cells structured in the original.
 10. **Training:** AdamW 1e-4 / 1e-3, a short warm-up, then a cosine or a warm-up-stable-decay schedule, about one pass
     over the frames, and EMA if the schedule has a constant phase. Fix the checkpoint in advance (the last epoch).
 11. **Thresholds:** recall points on the validation frames, per readout. The blurred side may be bolder than the sharp
     side.
-12. **Evaluation:** the witnesses of Section 14, under a registered protocol, before any use or distillation.
+12. **Evaluation:** the witnesses of Section 15, under a registered protocol, before any use or distillation.
 13. **Distillation, optionally:** score the corpus, train a fresh model on the maps with a measurement veto, and
     accept it only if it beats its teacher on the independent witnesses.
 
-## 17. Open questions
+## 18. Open questions
 
 - **The photo : frame ratio,** isolated from other changes.
 - **The transfer of a photo-learned px scale to native frames** (R4T-1 failed; Update 3 tests it with frame

@@ -19,6 +19,9 @@ before the results exist:
 [SYSTEM.md](SYSTEM.md) is the full description of the system. For every part it says what the part was used for and
 what it did, measured on the models of the series, and how to set it:
 
+- **The generations:** Generation 1 learns from VLM-labelled frames and the photo ladder; Generation 2 learns from
+  Generation 1's cell maps of every frame and the photo ladder. It covers what a generation inherits, what it gets
+  anew, how the dependence on the VLM changes, and whether the student has surpassed its teacher so far.
 - **The parts:** the dataset of native frames; the VLM teacher; the non-learned motion measurement; the frame
   selection; the photo ladder as etalon and regulariser, including what each step of the coding chain simulates;
   the signed edge fingerprint; the detector.
