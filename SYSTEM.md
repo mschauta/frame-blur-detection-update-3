@@ -74,7 +74,87 @@ flowchart LR
 | Generation 1 (VLM labels) | Update 1, Base and Small (0–3 / 16–30 px) | Update 3 (0–30 px, GOP-coded), in training |
 | Generation 2 (model 1's maps) | Update 2 (0–3 / 10–30 px, a stricter blurred side) | not yet run: it would learn Update 3's maps, if Update 3 passes |
 
-### 2.2 What a generation inherits, and what it gets anew
+### 2.2 The VLM's role: a binary bootstrap that is then transformed
+
+**At the start the frames had no reference.** Neither of the two signals at hand could separate the native frames:
+- **the measurement** ranks inside a shot but has no absolute boundary. It fails on close-ups, and the exposure time
+  is unknown;
+- **the photos** know the length exactly, but only for uniform camera blur.
+
+**The VLM was the first thing that could say "this frame is blurred, this one is sharp" on any native frame,**
+close-ups included. A forced yes / no is the simplest answer it gives reliably. The three questions turn it into a
+code, so the contradictory cases can be filtered out.
+
+**The binary label was the bootstrap, and it was transformed at every step:**
+
+| step | what the frame supervision is | what the model gives |
+|---|---|---|
+| Generation 1 | one binary VLM label per frame | a cell map and a frame score |
+| corpus scoring | — | a cell map of every frame: no VLM involved |
+| Generation 2 | Update 1's map, a soft value per cell | a cell map and a blur mass |
+| Generation 1 with a continuous ladder | the binary VLM label, plus px from the photos | a cell map that is also a px scale (if it holds on frames) |
+
+**How a per-frame label became a map.** The frame logit is a soft maximum over the cells (LSE). To call a frame
+blurred, the model must find blurred cells in it; to call it sharp, no cell may say blur. The image-level label
+therefore teaches where the blur is: this is weak supervision of the multiple-instance kind. The photos add a dense
+target per cell. The result is a map that follows the measured motion: within-frame Spearman 0.34 with the measured
+subject motion, against 0.007 for a model trained on photos only.
+
+**Why the frame-trained model stayed** (R4T-1 against Update 1). The photo-only ladder and mosaic models measure
+length well on photos, but on frames:
+- their map follows texture rather than motion;
+- they measure many clearly blurred frames under 1 px.
+
+Update 1's map, learned from frames, marks the blurred area "almost without error" by the author's inspection, and
+the measurement agrees. The native frames teach what the photos cannot: subject motion, local and partial motion,
+real coding, real optics.
+
+### 2.3 Could Generation 1 do without the VLM?
+
+**This has not been tried.** The only VLM-free attempts were photo-only (R4T-1, ladder and mosaic), and they failed on
+frames for the reason above: nothing on the frame side.
+
+**A VLM-free Generation 1 needs another frame-side signal.** The candidates, most promising first:
+
+1. **Relative order inside a shot, from the measurement.**
+   - **Why it could work:**
+     - inside a shot, frames share content, light, camera and coding, and the exposure is usually constant, so more
+       motion means more blur. The pairs differ mostly in blur, the native counterpart of a photo's ladder;
+     - the measurement exists for all 5,010,602 frames, with a 160 px grid;
+     - inside shots it agrees with both the VLM labels and Update 1's decisions: it separates the VLM's blurred from
+       sharp frames with a median AUC of 0.863, and Update 1's with 0.854.
+   - **The design:** a pairwise ranking loss on frames of the same shot ("this one is blurrier"), with no absolute
+     label. The photo ladder supplies the absolute scale and the zero point.
+   - **Where it is weak:**
+     - close-ups of untextured surfaces (the measurement needs structure);
+     - defocus and focus pulls (no motion);
+     - motion reversals;
+     - shots without variation, which give no pairs.
+
+     A shot that is blurred throughout gives no absolute information: only the photos do.
+2. **Measured motion times a film's exposure factor, as a px label** (proposed in R4T-1).
+   - **What it gives:** an absolute value at 160 px resolution.
+   - **How the factor is found:** per film, from its pure camera-motion frames. The px of a photo model divided by the
+     measured motion was 0.30–0.33 in the median, and 0.07–0.65 between films.
+   - **The cost:** about ±30–40% per frame, and an assumption of constant velocity between frames.
+3. **Consistency without labels:** the same frame in two codings, or in two releases of a film, must give the same
+   map.
+   - **What it gives:** invariance only, no blur information. It is a complement, not a teacher.
+
+**What would change:**
+- **The boundary on frames would come from the etalon alone**, in px, which is the series' own definition of sharp.
+  It would no longer come from the VLM.
+- **The model would not learn the VLM's composition judgement.** Under a whole-frame usability scope that is no loss.
+- **The circle to watch:** a model trained on the measurement's order agrees with the measurement by construction.
+  The motion witness then stops being independent. The independent witnesses would be the held-out VLM labels (now a
+  pure witness), the photo ladder, the two releases, the codec benchmark and visual inspection.
+
+**A fair test** would use the Update 3 recipe with one change. The frames' binary VLM label is replaced by the
+within-shot ranking from the measurement. The VLM labels are kept only for evaluation. The result is compared with the
+VLM-trained model of the same recipe. The question it answers: does the VLM add anything beyond the bootstrap, once a
+photo etalon and an in-shot order exist?
+
+### 2.4 What a generation inherits, and what it gets anew
 
 | source | what it gives | in which generation |
 |---|---|---|
@@ -89,7 +169,7 @@ flowchart LR
 produced. When it changes, the student changes with it, whatever the teacher says. Update 2's blurred photos started
 at 10 px instead of 16 px, and its decision on the photo ladder moved from about 9.1 px to about 6.9 px.
 
-### 2.3 How the dependence on the VLM changes
+### 2.5 How the dependence on the VLM changes
 
 - **Generation 1 learns the VLM's boundary but not its strictness.** The strictness comes from the etalon.
   - **The departure is measurable at the strict point** (Update 1 Base, partial corpus scoring, *lab notebook*). On
@@ -111,7 +191,7 @@ at 10 px instead of 16 px, and its decision on the photo ladder moved from about
   3. A continuous ladder: a px threshold, defined on the etalon alone. That it means the same on native frames is the
      open condition (R4T-1 failed it; Update 3 tests it with the frame supervision kept).
 
-### 2.4 Can the student surpass its teacher?
+### 2.6 Can the student surpass its teacher?
 
 **How it can:**
 - **An independent signal in its target:** the photo etalon, which sets strictness and scale regardless of the
@@ -168,7 +248,7 @@ while not losing more than a fixed margin on the VLM labels:
 - a better order inside 0–3 px on the photo ladder;
 - no I-frame preference when ranking.
 
-### 2.5 The next step in this scheme
+### 2.7 The next step in this scheme
 
 - **Generation 1 with a continuous ladder (Update 3)** is in training. Its protocol decides whether it reduces the
   frame-type bias without losing frame accuracy, and whether its px scale holds on native frames.
