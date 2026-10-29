@@ -13,9 +13,12 @@ would teach it to every model trained on them, whatever the photos do.
 
 ## Method
 
-- **Frame types.** For each of the 177 corpus videos, ffprobe lists the packets of the source file. A packet with the
-  key flag (K) marks a keyframe; the corpus frames carry the source timestamp. Of the 1,019,198 labelled frames,
-  12,116 are keyframes. I-frames without the key flag count as non-I, so the null is slightly diluted.
+- **Frame types.** For each video of the corpus database, ffprobe lists the packets of the source file. The
+  database lists 177 videos; the 173 videos of the corpus hold its frames. A packet with the key flag (K) marks a
+  keyframe; the corpus frames carry the source timestamp.
+- **Labels.** 1,019,198 of the 1,019,201 labelled frames carry one of the six codes used (`sss`, `ssb`, `bss`,
+  `sbb`, `bsb`, `bbb`); the other three hold an unanswered question. 12,116 of them are keyframes. I-frames without
+  the key flag count as non-I, so the null is slightly diluted.
 - **Triples.** A keyframe is compared with its two neighbours (frame index − 1 and + 1, same scene, all three
   labelled). The null is the same comparison centred on non-I frames, a fixed-seed 5% sample.
 - **Sharpness of a label:** the number of "sharp" answers in the three-question VLM code (sss = 3, bbb = 0).
@@ -32,5 +35,5 @@ would teach it to every model trained on them, whatever the photos do.
 | Update 1 Base: centre has the lowest blur probability | 49.1% | 26.5% |
 | Update 1 Base: median logit, centre − neighbours | −0.65 | +0.03 |
 
-The VLM labels practically do not depend on the frame type. Update 1 Base does, over all 177 videos. The bias
+The VLM labels practically do not depend on the frame type. Update 1 Base does, over all 173 videos. The bias
 therefore comes from the model, most likely from its uncoded photo anchors, and not from the frame labels.

@@ -14,6 +14,17 @@ before the results exist:
 - what the decision threshold means once the photos teach a length;
 - the evaluation, fixed in advance: [experiments/u3r3_gop_ladder/](experiments/u3r3_gop_ladder/).
 
+## The system
+
+[SYSTEM.md](SYSTEM.md) sets out the four parts that every model of the series is built from. It also shows how each
+update sets them:
+
+- **The dataset:** native frames, stored losslessly, with native blur of unknown length and unknown location.
+- **The regularisation:** the photo ladder, an exact blur length that is present throughout training. It covers the
+  ladder's role, the synthetic blur, the coding path and its artefacts, and the photo : frame ratio (1 : 1, 1 : 3).
+- **The distillation:** the learned blur signal labels the whole dataset.
+- **Optionally, a new model** trained on the distilled labels.
+
 ## Development history, continued
 
 Sections 1–8 of the history are in Update 1's README, section 9 in Update 2's. In short:
@@ -100,7 +111,7 @@ R4K-1 and R4K-2 showed that the coded frame type changes the scores. A sharp pho
 blurrier than the same photo coded as an I-frame. The question was where the bias comes from.
 
 **The VLM labels do not carry it** ([experiments/u3_precheck_frametype/](experiments/u3_precheck_frametype/)). On
-all 177 corpus videos a keyframe's label is barely sharper than its neighbours': 7.1% sharper than both, against
+all 173 corpus videos a keyframe's label is barely sharper than its neighbours': 7.1% sharper than both, against
 6.0% for non-I centres. Update 1 Base, on the same frames, gives the keyframe the lowest blur probability in 49.1% of
 the cases, against 26.5%. The bias comes from the model, most likely from its photos, which were never coded with
 inter frames: a sharp anchor always looked like an I-frame.
