@@ -16,14 +16,17 @@ before the results exist:
 
 ## The system
 
-[SYSTEM.md](SYSTEM.md) sets out the four parts that every model of the series is built from. It also shows how each
-update sets them:
+[SYSTEM.md](SYSTEM.md) is the full description of the system. For every part it says what the part was used for and
+what it did, measured on the models of the series, and how to set it:
 
-- **The dataset:** native frames, stored losslessly, with native blur of unknown length and unknown location.
-- **The regularisation:** the photo ladder, an exact blur length that is present throughout training. It covers the
-  ladder's role, the synthetic blur, the coding path and its artefacts, and the photo : frame ratio (1 : 1, 1 : 3).
-- **The distillation:** the learned blur signal labels the whole dataset.
-- **Optionally, a new model** trained on the distilled labels.
+- **The parts:** the dataset of native frames; the VLM teacher; the non-learned motion measurement; the frame
+  selection; the photo ladder as etalon and regulariser, including what each step of the coding chain simulates;
+  the signed edge fingerprint; the detector.
+- **Training:** repetition against every-sample-new; the learning rate, schedule and noise; what is learned fast
+  and what slowly; the choice of checkpoint; Small against Base.
+- **Readouts and thresholds per model,** what each model measures and how well, the distillation, and the witnesses.
+- **What generalises and what does not.**
+- **A step-by-step recipe** for building an equivalent dataset and model.
 
 ## Development history, continued
 
