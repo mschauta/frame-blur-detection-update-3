@@ -7,7 +7,7 @@ fingerprint of the [RGB Mesh Resampling](https://github.com/mschauta/rgb-mesh-re
 changes is what the photo anchors teach. The earlier models learned a class from them: sharp or blurred. Update 3
 learns a length: how many pixels of camera blur a frame carries, from 0 to 30 px.
 
-**Status, 2026-10-29: training.** There are no weights and no results yet. This repository records three things
+**Status, 2026-10-29: training** (epoch 13 of 30). There are no weights and no results yet. This repository records three things
 before the results exist:
 
 - how the three recipes differ;
@@ -101,19 +101,36 @@ Update 3 learns from two kinds of signal, and each sets a different part of the 
   format.
 - **The photos set the length scale.** The output has 16 ordinal thresholds (0.5, 1, 2, 3, … 24, 30 px):
   logit(L ≥ t_k) = s − b_k. The offsets b_k are learned from the photos only. No threshold is tied to 0.
-- **The VLM boundary therefore gets a position in pixels,** and that position is learned. It started at 3 px. In
-  the first three epochs it sat at 3.21, 3.11 and 2.84 px (interim values; the fixed checkpoint is epoch 29).
+- **The VLM boundary therefore gets a position in pixels,** and that position is learned. Nothing ties the photos
+  to the frames except the shared network, so the position can move during training, and it did (interim values;
+  the fixed checkpoint is epoch 29):
+  - **on the true photo length,** the length at which the frame decision flips on the validation photos was 3.0,
+    2.5 and 4.0 px in epochs 0–2, and 1.75–2.11 px from epoch 7 to epoch 12;
+  - **on the model's own scale,** the zero of the offsets b_k sat at 3 px at the start, at 3.21, 3.11 and 2.84 px
+    after epochs 0–2, and at 1.28 px after epoch 12, still falling. On the threshold grid the two readings agree at
+    epoch 12: the boundary lies between the 1 and 2 px thresholds. Inside a step the offsets do not locate it (next
+    paragraph). The true flip has been stable since epoch 7, while the offsets' zero still moves.
+- **The measured length is quantised by the thresholds.** A confident reading counts the thresholds passed, so it
+  reads about half a threshold step short, and below 1 px it reads almost 0. On the validation photos at epoch 12,
+  true 4.0 px reads 3.15 px (median), true 24 px reads 22 px, and true 0–1 px reads 0.05 px (interim).
 
 The class is then chosen when filtering, not in training, in line with the series' principle that 0 px is absolutely
 sharp:
 
-- **keep the VLM boundary,** about 3 px so far, which matches the earlier models' decision;
-- **or set a stricter length,** for example 1 px, where the use needs it.
+- **keep the VLM boundary,** about 2 px of photo blur so far;
+- **or set a stricter length,** for example 1 px, where the use needs it. Below 1 px the scale does not resolve
+  (0 px against 0–1 px photos: pair order 0.68 at epoch 12).
 
 **The condition.** A px threshold on a real frame means something only if the length scale learned on photos
 transfers to film frames. That is not shown yet. An earlier photo-only test (R4T-1, not yet published) learned the
 scale on photos, but on native frames it measured 17–29% of the frames that the VLM called clearly blurred (bbb) as
 under 1 px. Evaluation item 6 tests exactly this. Until it passes, a px value on a frame is a hypothesis.
+
+**Interim, validation frames (epoch 12):** the measured length follows the VLM codes. The medians are 0.02 px for
+`sss`, 0.02 px for `ssb`, 2.80 px for `bsb` and 5.48 px for `bbb`, and 4.3% of the `bbb` frames measure under 1 px.
+This part is met partly by construction: the frame label trains the same score s that the px scale reads, so a
+frame the model calls blurred cannot measure much under the boundary. The informative part of item 6 is the order
+inside a class, against the measured motion.
 
 ## Why the photos must carry the codec correction
 
@@ -142,8 +159,9 @@ shows that photos alone do not carry the measurement to native frames, so a larg
 decision (evaluation item 2).
 
 **Interim, validation photos:** by epoch 2 the I versus P/B gap has disappeared on the validation photos. At 0 px the
-median measured length is 0.40 px on I targets and 0.36 px on P/B targets, and in no codec do the P/B targets measure
-blurrier. This is the training distribution, so it was expected. It does not answer the question on film.
+median measured length was 0.40 px on I targets and 0.36 px on P/B targets at epoch 2, and 0.03 and 0.02 px at
+epoch 12; per codec the two differ by at most 0.02 px. This is the training distribution, so it was expected. It
+does not answer the question on film.
 
 ## The run
 
@@ -175,11 +193,14 @@ The [protocol](experiments/u3r3_gop_ladder/PROTOCOL.md) was registered before th
    enrichment when the sharpest frame of a time window is chosen.
 6. **The px scale on native frames:** the order of the VLM codes and the motion.
 
-The proposed criteria are in the protocol; the decision is the author's. Three caveats, recorded before the results:
+The proposed criteria are in the protocol; the decision is the author's. Four caveats, recorded before the results:
 
 - **Criterion 1 is partly met by construction.** The R4K-2 photos were never trained on, but the R4K-2 clips are the
   kind of clip Update 3 now trains on. The informative test of the hypothesis is the transfer to film: items 5
   and 6.
+- **Item 6 is partly met by construction too** (noted at epoch 12): the VLM label trains the score that the px scale
+  reads, so the order of the VLM codes in px follows from the frame decision. What it cannot force is the order
+  inside a class and the agreement with the measured motion.
 - **One run, three changes:** the coding, the continuous ladder and the dropped masks. If the result improves, the
   causes cannot be separated without the other runs of the 2×2 design (photo coding × ladder shape).
 - **Six held-out films:** the intervals describe the uncertainty over their shots, not over other films.
