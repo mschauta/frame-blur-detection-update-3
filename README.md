@@ -197,6 +197,9 @@ In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2
       frame. The trend with speed argues against it but does not exclude it.
     - The calibration also blurs the film grain. At slow pans (4–8 px per frame, estimate 1.4–1.5 px), the codec's
       sub-pixel motion compensation may add smoothing along the motion.
+    - **The kernel assumes steady light** during the exposure. Flickering or strobe light weights the motion path
+      unevenly and can give stepped or doubled edges, which a box calibration reads low. The validation films have
+      natural, indoor, camera and studio light, so only the flicker of indoor sources could matter there.
 - **One px per frame is the wrong object anyway:** a frame can carry camera blur and subject blur at once. The cell
   map is what has to hold the px. Whether the cell px keep their scale is not yet measured (items 4 and 6).
 - **The share of `bbb` frames under 1 px is partly met by construction.** The frame label trains the same score s
@@ -265,7 +268,7 @@ The [protocol](experiments/u3r3_gop_ladder/PROTOCOL.md) was registered before th
    enrichment when the sharpest frame of a time window is chosen.
 6. **The px scale on native frames:** the order of the VLM codes and the motion.
 
-The proposed criteria are in the protocol; the decision is the author's. Four caveats, recorded before the results:
+The proposed criteria are in the protocol; the decision is the author's. Five caveats, recorded before the results:
 
 - **Criterion 1 is partly met by construction.** The R4K-2 photos were never trained on, but the R4K-2 clips are the
   kind of clip Update 3 now trains on. The informative test of the hypothesis is the transfer to film: items 5
@@ -277,6 +280,11 @@ The proposed criteria are in the protocol; the decision is the author's. Four ca
 - **One run, three changes:** the coding, the continuous ladder and the dropped masks. If the result improves, the
   causes cannot be separated without the other runs of the 2×2 design (photo coding × ladder shape).
 - **Six held-out films:** the intervals describe the uncertainty over their shots, not over other films.
+- **Flash and strobe light in item 5** (noted by the author at epoch 28). The test series has such scenes, and no
+  training material has them: it has natural, indoor, camera and studio light. The agreement between codecs compares
+  the same frame, so the light is shared. The absolute readings in those scenes fall outside the training data and
+  are reported apart. A flash may also start an I-frame in the source encode, which would enter the I-frame
+  enrichment.
 
 ## Data availability
 
