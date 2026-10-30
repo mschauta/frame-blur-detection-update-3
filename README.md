@@ -54,7 +54,8 @@ to one of them.
 ## Weights
 
 `update3_small_p99_ep029.pt` (130 MB; SHA-256 `6cd68d831b63fdc5f8a6c02cef777c89fbd273daed4d3f47a3c134a37421fbf2`),
-ConvNeXt-Small, epoch 29 of 30.
+ConvNeXt-Small, epoch 29 of 30. The file is attached to the [releases](../../releases) (not stored in the
+repository).
 
 - **The format is Update 1's.** The state dict leaves out the two ordinal parameters, so Update 1's loader
   (`blurdetect`) and `classify.py` read the file unchanged. The image logit is the frame decision.
