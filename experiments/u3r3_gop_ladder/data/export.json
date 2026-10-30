@@ -1,0 +1,76 @@
+{
+ "source": "runs\\update3_small_gop_ladder_v1\\epochs\\epoch_029.pt",
+ "file": "weights\\update3_small_p99_ep029.pt",
+ "sha256": "6cd68d831b63fdc5f8a6c02cef777c89fbd273daed4d3f47a3c134a37421fbf2",
+ "size_bytes": 136223051,
+ "meta": {
+  "input": "p99",
+  "input_description": "edge fingerprint (m09 residual, p99)",
+  "backbone": "convnext_small (ImageNet-pretrained), stride 16",
+  "epoch": 29,
+  "epochs_total": 30,
+  "thresholds": {
+   "r90": 0.23623529999999998,
+   "r95": 0.032112850000000026,
+   "r98": 0.007816700000000005
+  },
+  "thresholds_meaning": "p_blurred >= threshold -> blurred; catches 90 / 95 / 98% of the blurred frames of the validation split",
+  "val_frames_auc": 0.9617245220724709,
+  "val_sharp_kept": {
+   "sharp_kept_r90": 0.8874613959234096,
+   "sharp_kept_r95": 0.7897467572575664,
+   "sharp_kept_r98": 0.6373069796170475
+  },
+  "license": "MIT (see LICENSE); trained on non-public material",
+  "arch": "convnext_small",
+  "fingerprint": "fp32",
+  "run": "update3_small_gop_ladder_v1",
+  "ordinal": {
+   "T": [
+    0.5,
+    1.0,
+    2.0,
+    3.0,
+    4.0,
+    5.0,
+    6.0,
+    7.0,
+    8.0,
+    10.0,
+    12.0,
+    14.0,
+    16.0,
+    20.0,
+    24.0,
+    30.0
+   ],
+   "b": [
+    -0.7269412279129028,
+    0.19256436824798584,
+    1.785070776939392,
+    3.640756130218506,
+    5.593518257141113,
+    7.612842559814453,
+    9.670083045959473,
+    11.75670051574707,
+    13.947684288024902,
+    16.014516830444336,
+    18.165502548217773,
+    20.324846267700195,
+    22.529380798339844,
+    25.686176300048828,
+    29.06907844543457,
+    36.25144958496094
+   ],
+   "anchor": "floating (no threshold pinned to 0)",
+   "measure": "L = sum_k sigmoid(logit - b_k) * (t_k - t_{k-1}), t_0 = 0; image or cell logit"
+  }
+ },
+ "parity_probe": {
+  "image_logit_train": -0.5819204449653625,
+  "image_logit_export": -0.5819204449653625,
+  "max_abs_cell_logit_difference": 0.0,
+  "L_train_measure": 0.5284149050712585,
+  "L_from_meta": 0.5284148847319042
+ }
+}

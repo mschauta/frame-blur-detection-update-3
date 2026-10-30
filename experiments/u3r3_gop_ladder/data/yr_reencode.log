@@ -1,0 +1,22 @@
+x264_2.7M: 2520 kbit/s, PSNR vs reference 39.38 dB
+x264_crf18: 8354 kbit/s, PSNR vs reference 41.66 dB
+x265_10bit_2.7M: 2487 kbit/s, PSNR vs reference 39.24 dB
+aligned to stored frame 14400; stored HEVC U3 vs rescored max |d| 0.0000
+HEVC (reference)     U3 px median  0.62, logit  -0.31, Spearman with reference 1.000 | Small logit  -0.10, Spearman with reference 1.000
+x264_2.7M            U3 px median  3.04, logit   4.72, Spearman with reference 0.193 | Small logit   3.36, Spearman with reference 0.714
+x264_crf18           U3 px median  2.18, logit   3.05, Spearman with reference 0.558 | Small logit   2.63, Spearman with reference 0.842
+x265_10bit_2.7M      U3 px median  1.72, logit   2.15, Spearman with reference 0.797 | Small logit   0.41, Spearman with reference 0.873
+AVC file (stored)    U3 px median  3.26, logit   5.15, Spearman with reference 0.255 | Small logit   3.82, Spearman with reference 0.782
+
+ffv1_yuv420p_lossless: 105391 kbit/s, PSNR vs reference 44.63 dB
+ffv1_yuv420p10_lossless: 194077 kbit/s, PSNR vs reference 42.48 dB
+x264_qp0_lossless: 102308 kbit/s, PSNR vs reference 44.63 dB
+x264_crf12: 19465 kbit/s, PSNR vs reference 43.04 dB
+aligned to stored frame 14400; stored HEVC U3 vs rescored max |d| 0.0000
+HEVC (reference)     U3 px median  0.62, logit  -0.31, Spearman with reference 1.000 | Small logit  -0.10, Spearman with reference 1.000
+ffv1_yuv420p_lossless U3 px median  0.66, logit  -0.20, Spearman with reference 0.875 | Small logit  -0.03, Spearman with reference 0.976
+ffv1_yuv420p10_lossless U3 px median  0.67, logit  -0.18, Spearman with reference 0.867 | Small logit  -0.22, Spearman with reference 0.976
+x264_qp0_lossless    U3 px median  0.66, logit  -0.20, Spearman with reference 0.875 | Small logit  -0.03, Spearman with reference 0.976
+x264_crf12           U3 px median  1.20, logit   1.09, Spearman with reference 0.733 | Small logit   2.19, Spearman with reference 0.877
+AVC file (stored)    U3 px median  3.26, logit   5.15, Spearman with reference 0.255 | Small logit   3.82, Spearman with reference 0.782
+

@@ -1,4 +1,4 @@
-# Frame Blur Detection — Update 3 (in training)
+# Frame Blur Detection — Update 3
 
 The fourth model of [Frame Blur Detection](https://github.com/mschauta/frame-blur-detection), after
 [Update 1](https://github.com/mschauta/frame-blur-detection-update-1) and
@@ -7,12 +7,72 @@ fingerprint of the [RGB Mesh Resampling](https://github.com/mschauta/rgb-mesh-re
 changes is what the photo anchors teach. The earlier models learned a class from them: sharp or blurred. Update 3
 learns a length: how many pixels of camera blur a frame carries, from 0 to 30 px.
 
-**Status, 2026-10-30: training** (epoch 20 of 30). There are no weights and no results yet. This repository records three things
-before the results exist:
+**Status, 2026-10-30: trained and evaluated.** The run finished, and epoch 29 is the checkpoint fixed in advance.
+Every item of the evaluation registered before the run has been carried out. All three proposed criteria are met.
+Two items came out worse than Update 1 Small: the cell map inside a frame, and the agreement between codecs on film.
+The full report is [experiments/u3r3_gop_ladder/REPORT.md](experiments/u3r3_gop_ladder/REPORT.md).
 
-- how the three recipes differ;
-- what the decision threshold means once the photos teach a length;
-- the evaluation, fixed in advance: [experiments/u3r3_gop_ladder/](experiments/u3r3_gop_ladder/).
+## Results
+
+The control is Update 1 Small (release v1.1): the same frames, the same start and the same schedule.
+
+| evaluation item | Update 3 | Update 1 Small | proposed criterion |
+|---|---|---|---|
+| 1. codec gap on R4K-2 photo clips (P/B − I-only, logit; x264 CRF 23, pan) | +0.00 | +13.20 | **met** |
+| 2. AUC on six held-out films | 0.9627 | 0.9620 | **met:** +0.0007 [−0.0017, +0.0028] |
+| 3(a). pair order 0–3 px, Update 1 photo ladder | 0.996 | 0.659 | **met** |
+| 3(b). px MAE / Spearman, x264 / x265 / AV1 × I-only / IPB | 1.47–1.52 px / 0.990–0.995 | no px | – |
+| 4. cell map against the measured motion, inside a frame | 0.249 | 0.338 | – (worse) |
+| 5. agreement of one episode's AVC and 10-bit encodes (Spearman) | 0.29–0.40 | 0.60–0.83 | – (worse) |
+| 5. I-frame enrichment when picking the sharpest frame per 5 s, AVC | 23–24× | 69–82× | – |
+| 6. VLM-blurred (`bbb`) frames measured under 1 px, held-out films | 5.6% | no px | (R4T-1: 17–29%) |
+
+- **On photo clips the frame-type bias is gone.** Update 3 reads an I-frame and the P- or B-frames of the same clip
+  alike, in all three codecs. Where an I-only coding is worse (lower PSNR), it reads those frames as blurrier: it
+  follows the coding quality, not the frame type.
+- **The frame decision is as good as Update 1 Small's,** on the held-out films and on the validation frames (AUC
+  0.9617 against 0.9612).
+- **The px scale holds on photos** in every codec and structure tested. On native frames the VLM-blurred frames no
+  longer read under 1 px (5.6% of `bbb`, against 17–29% for the photo-only R4T-1). Inside one VLM code, the cell
+  readouts order the frames by measured motion as well as Update 1 Small's do.
+- **On film the frame-type bias is reduced, not removed, and a codec bias remains.**
+  - On the AVC encodes of the test series the I-frame enrichment falls to a third or less of Update 1 Small's.
+  - But Update 3 reads the AVC encode 2.5–3 px blurrier than the 10-bit HEVC and AV1 encodes of the same frames, and
+    ranks the frames of the encodes very differently.
+  - Re-encoding the same frames shows that x264 coding of film frames raises the reading step by step with falling
+    quality, by 0.6 px even at 43 dB. x265 10 bit at the same rate raises it less.
+  - Update 1 Small reacts the same way in logits and crosses its decision boundary, but keeps its ranking better.
+  - Between two H.264 releases of 31 corpus films, Update 3 agrees as well as Update 1 Small (Spearman 0.801 against
+    0.793).
+- **The cell map localises motion less well inside a frame** (0.249 against 0.338).
+- **The 95% point is very strict.** Its threshold sits at 0.05 px, so it calls 21% of coded 0 px photos blurred
+  (Update 1 Small: 4%). That is as strict as on the sharp validation frames, where it keeps 79%.
+
+One run carries three changes (photo coding, continuous ladder, no masks), so none of these results can be assigned
+to one of them.
+
+## Weights
+
+`update3_small_p99_ep029.pt` (130 MB; SHA-256 `6cd68d831b63fdc5f8a6c02cef777c89fbd273daed4d3f47a3c134a37421fbf2`),
+ConvNeXt-Small, epoch 29 of 30.
+
+- **The format is Update 1's.** The state dict leaves out the two ordinal parameters, so Update 1's loader
+  (`blurdetect`) and `classify.py` read the file unchanged. The image logit is the frame decision.
+- **Thresholds** from the validation frames: r90 / r95 / r98 = 0.2362 / 0.0321 / 0.0078 on the sigmoid score. On the px
+  scale these are 0.355 / 0.052 / 0.013 px.
+- **The px reading** needs the ordinal offsets in `meta["ordinal"]`:
+
+```python
+import numpy as np
+from blurdetect import load_detector          # from frame-blur-detection-update-1
+
+model, meta = load_detector("weights/update3_small_p99_ep029.pt", "cuda")
+T = np.array(meta["ordinal"]["T"])            # 0.5, 1, 2, ... 24, 30 px
+b = np.array(meta["ordinal"]["b"])            # the learned offsets
+
+def px(logit):                                # image logit, or a cell of out["local"]
+    return float((np.diff(T, prepend=0.0) / (1 + np.exp(-(logit - b)))).sum())
+```
 
 ## The system
 
@@ -102,37 +162,39 @@ Update 3 learns from two kinds of signal, and each sets a different part of the 
 - **The photos set the length scale.** The output has 16 ordinal thresholds (0.5, 1, 2, 3, … 24, 30 px):
   logit(L ≥ t_k) = s − b_k. The offsets b_k are learned from the photos only. No threshold is tied to 0.
 - **The VLM boundary therefore gets a position in pixels,** and that position is learned. Nothing ties the photos
-  to the frames except the shared network, so the position can move during training, and it did (interim values;
-  the fixed checkpoint is epoch 29):
-  - **on the true photo length,** the length at which the frame decision flips on the validation photos was 3.0,
-    2.5 and 4.0 px in epochs 0–2, 1.75–2.11 px in epochs 7–12, and 1.04–1.59 px in epochs 13–19, varying from
-    epoch to epoch (1.04 px at epoch 19);
+  to the frames except the shared network, so the position moved during training:
+  - **on the true photo length,** the frame decision flipped on the validation photos at 3.0, 2.5 and 4.0 px in
+    epochs 0–2, at 1.75–2.11 px in epochs 7–12, and at 0.80–1.59 px in epochs 13–29, varying from epoch to epoch.
+    At the fixed epoch 29 it flips at 1.21 px;
   - **on the model's own scale,** the zero of the offsets b_k sat at 3 px at the start, at 3.21, 3.11 and 2.84 px
-    after epochs 0–2, at 1.28 px after epoch 12, 1.11 px after epoch 15 and 0.98 px after epoch 19: still falling,
-    by about 0.04 px per epoch. On the threshold grid the two readings agree to within a step: at epoch 19 both lie
-    near the 1 px threshold. Inside a step the offsets do not locate it (next paragraph).
+    after epochs 0–2, at 1.28 px after epoch 12 and 0.98 px after epoch 19. At epoch 29 it is 0.90 px. On the
+    threshold grid the two readings agree to within a step; inside a step the offsets do not locate it (next
+    paragraph).
 - **The measured length is quantised by the thresholds.** A confident reading counts the thresholds passed, so it
-  reads about half a threshold step short, and below 1 px it reads almost 0. On the validation photos at epoch 19,
-  true 4.0 px reads 3.4 px (median), true 0–1 px reads 0.15 px, and the top of the ladder reads shorter still: true
-  23.6 px reads 19.8 px. That is more than the quantisation explains, and it grew during training (22.2 px at epoch
-  12), while below 8 px the readings moved closer to the truth over the same epochs. The order is kept (pair order
-  ≥ 0.99 above 5 px) (interim).
+  reads about half a threshold step short, and below 1 px it reads almost 0. On the validation photos at epoch 29:
+  - true 4.0 px reads 3.25 px (median) and true 0–1 px reads 0.07 px;
+  - the top of the ladder reads shorter still: true 23.6 px reads 19.7 px. That is more than the quantisation
+    explains, and it grew during training (22.2 px at epoch 12);
+  - the order is kept: Spearman 0.992, and the pair order of neighbouring length bins is at least 0.99 above 5 px.
 
 The class is then chosen when filtering, not in training, in line with the series' principle that 0 px is absolutely
 sharp:
 
-- **keep the VLM boundary,** between 1 and 1.6 px of photo blur in epochs 13–19, and still moving down;
-- **or set a stricter length,** for example 1 px, where the use needs it. Below 1 px the scale does not resolve
-  (0 px against 0–1 px photos: pair order 0.72 at epoch 19).
+- **keep the VLM boundary,** at about 1.2 px of photo blur (epoch 29);
+- **or set a stricter length,** for example 1 px, where the use needs it. Below 1 px the scale does not resolve: 0 px
+  against 0–1 px photos has a pair order of 0.74 at epoch 29.
 
 **The condition.** A px threshold on a real frame means something only if the length scale learned on photos
-transfers to film frames. That is not shown yet. An earlier photo-only test (R4T-1, not yet published) learned the
-scale on photos, but on native frames it measured 17–29% of the frames that the VLM called clearly blurred (bbb) as
-under 1 px. Evaluation item 6 tests exactly this. Until it passes, a px value on a frame is a hypothesis.
+transfers to film frames. An earlier photo-only test (R4T-1, not published) learned the scale on photos, but on
+native frames it measured 17–29% of the frames the VLM called clearly blurred (`bbb`) as under 1 px. Update 3 keeps
+the frame supervision beside the photos, and on the held-out films it measures 5.6% of the `bbb` frames under 1 px.
+The px on film still depends on the codec (item 5, above). Film coded with x264 reads higher than the same frames
+in 10-bit HEVC or AV1, and which reading is closer to the true blur is not known. Every training video was H.264
+8 bit, so px values are comparable only within one codec.
 
-**Interim, validation frames:** the measured length of the whole frame, read from the frame score, follows the VLM
-codes. Its values fell in epochs 0–12; since then they vary from epoch to epoch without a clear trend, and epoch 15
-was a low point.
+**Validation frames, over training:** the measured length of the whole frame, read from the frame score, follows the
+VLM codes. Its values fell in epochs 0–12; since then they have varied from epoch to epoch without a clear trend, and
+epoch 15 was a low point.
 
 | median measured length | `sss` | `ssb` | `bsb` | `bbb` | `bbb` under 1 px |
 |---|---|---|---|---|---|
@@ -140,8 +202,8 @@ was a low point.
 | epoch 12 | 0.02 px | 0.02 px | 2.80 px | 5.48 px | 4.3% |
 | epoch 15 | 0.01 px | 0.03 px | 1.69 px | 3.54 px | 8.4% |
 | epoch 19 | 0.01 px | 0.03 px | 2.86 px | 4.81 px | 4.4% |
-
-In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2.9 px.
+| epoch 29 | 0.00 px | 0.01 px | 2.37 px | 3.96 px | 5.2% |
+| epoch 29, held-out films | 0.005 px | 0.012 px | 2.40 px | 4.21 px | 5.6% |
 
 - **Two causes were possible:**
   - **the scale:** the frames' logits grow more slowly than the photo offsets. The median `bbb` logit swings from
@@ -164,10 +226,10 @@ In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2
     through the label: the VLM calls larger moving areas `bbb` more often.
 
   The frame px follows the label more than the size of the motion.
-- **Steady camera pans read almost 0 px.** The VLM calls 58% of them sharp (`sss`). Up to 16 px of pan per frame the
-  median reads at most 0.1 px, and inside a shot faster pans read only slightly higher (median Spearman 0.20). The px
-  per px of pan is 0.003–0.11 by film. The pans the VLM calls `bbb` read lower than other `bbb` frames (3.9 px, 15%
-  under 1 px, against 3–4% elsewhere).
+- **Steady camera pans read almost 0 px.** The VLM calls 58% of them sharp (`sss`). At epoch 29, pans of 4–16 px per
+  frame read 0.01–0.03 px in the median, and even the largest inner cell reads only 1.4–1.5 px: the cells do not
+  hide the blur either. The pans labelled `sss` read 0.00–0.06 px; those labelled `bbb` read 1.8–3.9 px. Epoch 0 still
+  ranked the pans by their speed; by epoch 12 the `sss` pans read 0 px.
 - **An exposure-free measurement says that the pans are blurred** (4,347 pans; method and decision rule recorded before
   the results).
   - **The method:** motion blur absorbs the gradient along its direction. Per frame, the ratio of gradient energy
@@ -183,8 +245,8 @@ In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2
   - **Not new in Update 3:** Update 1 Small keeps the same share of these pans as sharp at the 95% point (57%,
     against 55%).
 
-  On steady pans the photo scale does not reach the frames: the frame label overrides it. This is a weak spot for
-  item 6, inherited from the labels (interim).
+  On steady pans the photo scale does not reach the frames: the frame label overrides it. This weak spot is
+  inherited from the labels.
   - **Limits:**
     - **The calibration runs in the wrong order** (pointed out by the author). It blurs frames that are already
       coded, while the ladder and a real pan are blurred first and coded after. So the px values and the exposure
@@ -201,11 +263,13 @@ In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2
       unevenly and can give stepped or doubled edges, which a box calibration reads low. The validation films have
       natural, indoor, camera and studio light, so only the flicker of indoor sources could matter there.
 - **One px per frame is the wrong object anyway:** a frame can carry camera blur and subject blur at once. The cell
-  map is what has to hold the px. Whether the cell px keep their scale is not yet measured (items 4 and 6).
+  map is what has to hold the px. Measured after the run:
+  - inside one VLM code, across the held-out frames, Update 3's cell readouts follow the measured motion as well as
+    Update 1 Small's (`bbb`: 0.642 against 0.639), and its cells' 90th percentile does better on `ssb` and `bsb`;
+  - inside one frame, its cell map ranks the cells by motion less well than Update 1 Small's (0.249 against 0.338).
 - **The share of `bbb` frames under 1 px is partly met by construction.** The frame label trains the same score s
   that the px scale reads, so a frame the model calls blurred cannot measure much under the boundary: the `bbb`
-  frames under 1 px are roughly those the model calls sharp (4.4% and 3.9% at epoch 19).
-- **The informative part of item 6** is the order inside a class, against the measured motion.
+  frames under 1 px are roughly those the model calls sharp.
 
 ## Why the photos must carry the codec correction
 
@@ -233,10 +297,15 @@ changes. The ratio is the next variable if the correction does not transfer to f
 shows that photos alone do not carry the measurement to native frames, so a larger photo share can harm the frame
 decision (evaluation item 2).
 
-**Interim, validation photos:** by epoch 2 the I versus P/B gap has disappeared on the validation photos. At 0 px the
-median measured length was 0.40 px on I targets and 0.36 px on P/B targets at epoch 2, 0.03 and 0.02 px at
-epoch 12, and 0.04 and 0.04 px at epoch 19; per codec the two differ by at most 0.04 px. This is the training distribution, so it was expected. It
-does not answer the question on film.
+**What it did:**
+- **On the validation photos** the I versus P/B gap disappeared by epoch 2. At 0 px the median reading was 0.40 px on
+  I targets and 0.36 px on P/B targets at epoch 2, and 0.02 against 0.01 px at epoch 29; per codec the two differ by
+  at most 0.01 px. This is the training distribution, so it was expected.
+- **On the R4K-2 photo clips,** never trained on, the gap is gone in every rate and motion (item 1).
+- **On film** the I-frame preference fell to a third or less of Update 1 Small's on the AVC encodes. But film frames
+  coded with x264 read blurrier than the same frames coded with x265 or AV1 in 10 bit, for both models (item 5). The
+  photos taught the frame type away; they did not teach the codec away. Every training video is H.264 8 bit, so
+  the frame side has only ever seen H.264-coded film.
 
 ## The run
 
@@ -254,16 +323,20 @@ The full recipe is in the [protocol](experiments/u3r3_gop_ladder/PROTOCOL.md). I
   score.
 - **Chosen checkpoint:** epoch 29, fixed in advance. The control is Update 1 Small (release v1.1, epoch 29), trained
   on the same frames from the same start.
+- **The course:** 30 epochs, 90,509 steps, 117,448 s on one RTX 5090. The frame AUC on the validation frames was above
+  Update 1 Small's in 24 of the 30 epochs (mean 0.9477 against 0.9434), and in 9 of the last 10.
 
 ## Evaluation, fixed before the results
 
 The [protocol](experiments/u3r3_gop_ladder/PROTOCOL.md) was registered before the run started. Its SHA-256 is in
-[PROTOCOL.sha256](experiments/u3r3_gop_ladder/PROTOCOL.sha256).
+[PROTOCOL.sha256](experiments/u3r3_gop_ladder/PROTOCOL.sha256). The results of every item are in the
+[report](experiments/u3r3_gop_ladder/REPORT.md).
 
 1. **Codec dependence:** the R4K-2 clips, unchanged, against Update 1 Small.
 2. **Held-out films:** AUC and the sharp frames kept at the operating points, paired with Update 1 Small.
 3. **Photo ladder:** Update 1's published ladder, and the same in GOP clips per codec and frame type.
-4. **Cell maps:** visual inspection, and the cell-level motion witness.
+4. **Cell maps:** visual inspection, and the cell-level motion witness. The visual inspection needs Update 3 in
+   FrameBlurStudio and is not done yet.
 5. **One series in three codecs** (AVC, HEVC, AV1): the same frames, agreement of the scores, and the I-frame
    enrichment when the sharpest frame of a time window is chosen.
 6. **The px scale on native frames:** the order of the VLM codes and the motion.
@@ -272,13 +345,13 @@ The proposed criteria are in the protocol; the decision is the author's. Five ca
 
 - **Criterion 1 is partly met by construction.** The R4K-2 photos were never trained on, but the R4K-2 clips are the
   kind of clip Update 3 now trains on. The informative test of the hypothesis is the transfer to film: items 5
-  and 6.
+  and 6. It transferred in part (item 5).
 - **Item 6 is partly met by construction too** (noted at epoch 12): the VLM label trains the score that the px scale
   reads, so the order of the VLM codes in px follows from the frame decision. What it cannot force is the order
   inside a class and the agreement with the measured motion. The frame-level px fell during training (noted at
   epoch 15, above), so the px are judged on the cell map.
-- **One run, three changes:** the coding, the continuous ladder and the dropped masks. If the result improves, the
-  causes cannot be separated without the other runs of the 2×2 design (photo coding × ladder shape).
+- **One run, three changes:** the coding, the continuous ladder and the dropped masks. The causes cannot be separated
+  without the other runs of the 2×2 design (photo coding × ladder shape).
 - **Six held-out films:** the intervals describe the uncertainty over their shots, not over other films.
 - **Flash and strobe light in item 5** (noted by the author at epoch 28). The test series has such scenes, and the
   training material has them only rarely: it has natural, indoor, camera and studio light, and a few photo-shoot
@@ -293,6 +366,8 @@ The proposed criteria are in the protocol; the decision is the author's. Five ca
     Update 2 (v9) gives the same counts on the same frames, and 84% of the keyframes have a blur mass of exactly 0.
     The flash frames read sharp because of the frame type, not the light. The keyframes sit at the same places in
     every codec, so the P-frame light jumps are the control for item 5.
+  - **Result:** over the whole first episode in AVC, Update 3 calls 34% of the light-jump keyframes sharp at r95,
+    against 93% for Update 1 Small.
 
 ## Data availability
 

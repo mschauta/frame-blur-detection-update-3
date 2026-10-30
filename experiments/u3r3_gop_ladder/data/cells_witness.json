@@ -1,0 +1,47 @@
+{
+ "frames": 2000,
+ "near_frames": 760,
+ "cells": 137934,
+ "what": "R4T-1 9.6 repeated: within-frame Spearman between the model's cell map (16 px logits averaged over the 160 px block) and the measured motion; textured (>= 500 px) measured cells",
+ "models": {
+  "u3": {
+   "subject_within_frame_median": 0.24875796190381888,
+   "subject_within_frame_median_ci95": [
+    0.2319030496120246,
+    0.2661009535473712
+   ],
+   "subject_not_near": 0.22574938119767202,
+   "subject_near": 0.29360543690710883,
+   "total_within_frame_median": 0.2474502562616815,
+   "detail_within_frame_median": -0.17327480866936784,
+   "pooled_subject": 0.459712253255782,
+   "pooled_total": 0.4854801212827211
+  },
+  "small": {
+   "subject_within_frame_median": 0.3381074168797954,
+   "subject_within_frame_median_ci95": [
+    0.32099037454736234,
+    0.34985749003791206
+   ],
+   "subject_not_near": 0.2974676352671501,
+   "subject_near": 0.4038852919439771,
+   "total_within_frame_median": 0.32935742553559955,
+   "detail_within_frame_median": -0.1590638003431244,
+   "pooled_subject": 0.5123049452416927,
+   "pooled_total": 0.5266330134259848
+  }
+ },
+ "u3_minus_small_subject_within_frame": {
+  "median_of_differences": -0.07570415156356197,
+  "ci95": [
+   -0.0845299161774209,
+   -0.06820779750969587
+  ]
+ },
+ "round3_base_r4t1_reference": {
+  "subject_within_frame_median": 0.339,
+  "total": 0.332,
+  "detail": -0.179,
+  "pooled_subject": 0.507
+ }
+}

@@ -1,0 +1,709 @@
+{
+ "what": "Protocol items 2 and 6: the six held-out films, Update 3 ep029 vs the round3 Small ep029 (R4S-1 scores), both through the published Update 1 loader; VLM labels as in Update 1 (blurred = bbb + bsb)",
+ "bootstrap": "2000 cluster resamples over shots within each film, seed 20261030, the same for both models",
+ "groups": [
+  {
+   "group": "validation films (3)",
+   "films": [
+    "validation film A",
+    "validation film B",
+    "validation film C"
+   ],
+   "n_sharp": 37133,
+   "n_blur": 17886,
+   "auc": {
+    "u3": 0.9583928938309367,
+    "small": 0.9577535682704617
+   },
+   "auc_ci95": {
+    "u3": [
+     0.9502031912797447,
+     0.9654641284666665
+    ],
+    "small": [
+     0.9494971032702973,
+     0.9647232638881507
+    ]
+   },
+   "auc_difference_u3_minus_small": {
+    "value": 0.0006393255604750792,
+    "ci95": [
+     -0.0014343890771996075,
+     0.00282010635615231
+    ]
+   },
+   "operating_points": {
+    "u3_r90": {
+     "threshold": 0.23623529999999998,
+     "sharp_kept": 0.890555570516791,
+     "sharp_kept_ci95": [
+      0.8734571035427245,
+      0.9049753965992936
+     ],
+     "blur_caught": 0.891479369339148
+    },
+    "u3_r95": {
+     "threshold": 0.032112850000000026,
+     "sharp_kept": 0.7916947189831147,
+     "sharp_kept_ci95": [
+      0.7664854769236399,
+      0.8143821233281764
+     ],
+     "blur_caught": 0.9450408140445041
+    },
+    "u3_r98": {
+     "threshold": 0.007816700000000005,
+     "sharp_kept": 0.628335981472006,
+     "sharp_kept_ci95": [
+      0.5962893774425322,
+      0.6590212170123505
+     ],
+     "blur_caught": 0.9767415855976742
+    },
+    "small_r90": {
+     "threshold": 0.20402379999999956,
+     "sharp_kept": 0.8840384563595723,
+     "sharp_kept_ci95": [
+      0.8670180429538251,
+      0.8990115911646664
+     ],
+     "blur_caught": 0.8910320921391032
+    },
+    "small_r95": {
+     "threshold": 0.040729600000000005,
+     "sharp_kept": 0.7829423962513129,
+     "sharp_kept_ci95": [
+      0.7572641016888346,
+      0.8065112225440613
+     ],
+     "blur_caught": 0.9449289947444929
+    },
+    "small_r98": {
+     "threshold": 0.01123974000000001,
+     "sharp_kept": 0.6403468612824172,
+     "sharp_kept_ci95": [
+      0.6073947474522456,
+      0.6716902232238354
+     ],
+     "blur_caught": 0.9770770434977077
+    },
+    "sharp_kept_difference_u3_minus_small_r90": {
+     "value": 0.006517114157218673,
+     "ci95": [
+      0.0014333059519497705,
+      0.011749817852517197
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    },
+    "sharp_kept_difference_u3_minus_small_r95": {
+     "value": 0.00875232273180182,
+     "ci95": [
+      0.0016028979068019172,
+      0.016319647164345825
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    },
+    "sharp_kept_difference_u3_minus_small_r98": {
+     "value": -0.012010879810411268,
+     "ci95": [
+      -0.0246798229596091,
+      0.0003189406334658144
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    }
+   },
+   "motion": {
+    "frames_with_measurement": 55019,
+    "spearman_logit_region_px": {
+     "u3": 0.6586779170513201,
+     "small": 0.6678548080008461
+    },
+    "spearman_ci95": {
+     "u3": [
+      0.6246250557888076,
+      0.6903945488895221
+     ],
+     "small": [
+      0.6323357605516905,
+      0.6989283478326548
+     ]
+    },
+    "spearman_difference_u3_minus_small": {
+     "ci95": [
+      -0.02232637223879143,
+      0.0034350028516813647
+     ]
+    },
+    "spearman_m_inner_region_px": {
+     "u3": 0.6567310939817089,
+     "small": 0.6782447553875453
+    },
+    "spearman_cell_px_p90_region_px_u3": 0.6963492771128837
+   },
+   "agreement_r95": {
+    "same_decision": 0.9440375143132372,
+    "cohen_kappa": 0.8869821419362945,
+    "spearman_logits": 0.9550942777248427,
+    "disagreements": 3079,
+    "of_which_the_vlm_label_sides_with_u3": 0.5531016563819422
+   },
+   "px_by_code": {
+    "sss": {
+     "n": 33732,
+     "L_median": 0.0052748,
+     "L_p10_p90": [
+      0.000255223,
+      0.29963800000000007
+     ],
+     "L_under_1px": 0.9410352187833512,
+     "cell_p90_median": 0.0080492,
+     "cell_max_median": 1.2746,
+     "cell_max_under_1px": 0.30104944859480615,
+     "cells_ge_1px_share_median": 0.0010272
+    },
+    "ssb": {
+     "n": 3401,
+     "L_median": 0.012161,
+     "L_p10_p90": [
+      0.00014813,
+      2.1114
+     ],
+     "L_under_1px": 0.8056453984122317,
+     "cell_p90_median": 0.0049428,
+     "cell_max_median": 1.9958,
+     "cell_max_under_1px": 0.25433695971773007,
+     "cells_ge_1px_share_median": 0.0038521
+    },
+    "bsb": {
+     "n": 7418,
+     "L_median": 2.3005500000000003,
+     "L_p10_p90": [
+      0.0393116,
+      3.7850500000000005
+     ],
+     "L_under_1px": 0.2837692100296576,
+     "cell_p90_median": 1.685,
+     "cell_max_median": 5.2001,
+     "cell_max_under_1px": 0.014154758695066055,
+     "cells_ge_1px_share_median": 0.12725
+    },
+    "bbb": {
+     "n": 10468,
+     "L_median": 3.8673,
+     "L_p10_p90": [
+      1.7412,
+      5.53673
+     ],
+     "L_under_1px": 0.060374474589224306,
+     "cell_p90_median": 4.529,
+     "cell_max_median": 6.3182,
+     "cell_max_under_1px": 0.0008597630875047765,
+     "cells_ge_1px_share_median": 0.38213
+    }
+   },
+   "px_order_auc": {
+    "bbb>bsb": {
+     "u3_L": 0.7993714143055141,
+     "u3_Lc_p90": 0.8314669310715253,
+     "u3_Lc_max": 0.7269151125545037
+    },
+    "bsb>sss": {
+     "u3_L": 0.9279781007076636,
+     "u3_Lc_p90": 0.9116395784551038,
+     "u3_Lc_max": 0.91389770738836
+    },
+    "bbb>sss": {
+     "u3_L": 0.9870966719124483,
+     "u3_Lc_p90": 0.9868680483027877,
+     "u3_Lc_max": 0.9781422903888372
+    }
+   }
+  },
+  {
+   "group": "test films (3)",
+   "films": [
+    "test film B",
+    "test film C",
+    "test film A"
+   ],
+   "n_sharp": 33877,
+   "n_blur": 25791,
+   "auc": {
+    "u3": 0.9659197948712518,
+    "small": 0.965388567941348
+   },
+   "auc_ci95": {
+    "u3": [
+     0.9547815714855822,
+     0.975401828795019
+    ],
+    "small": [
+     0.954063492032805,
+     0.9747070136808824
+    ]
+   },
+   "auc_difference_u3_minus_small": {
+    "value": 0.0005312269299038164,
+    "ci95": [
+     -0.0033597656493306594,
+     0.0036372082949789894
+    ]
+   },
+   "operating_points": {
+    "u3_r90": {
+     "threshold": 0.23623529999999998,
+     "sharp_kept": 0.888803613070815,
+     "sharp_kept_ci95": [
+      0.8655136976214982,
+      0.9085560837506848
+     ],
+     "blur_caught": 0.9207087743786592
+    },
+    "u3_r95": {
+     "threshold": 0.032112850000000026,
+     "sharp_kept": 0.7856362723972017,
+     "sharp_kept_ci95": [
+      0.7490552765774531,
+      0.8173407490198427
+     ],
+     "blur_caught": 0.9554883486487534
+    },
+    "u3_r98": {
+     "threshold": 0.007816700000000005,
+     "sharp_kept": 0.6452165185819287,
+     "sharp_kept_ci95": [
+      0.6046298284704561,
+      0.6829932832416427
+     ],
+     "blur_caught": 0.9739831724244892
+    },
+    "small_r90": {
+     "threshold": 0.20402379999999956,
+     "sharp_kept": 0.8924048764648581,
+     "sharp_kept_ci95": [
+      0.870617351759414,
+      0.9109651497914569
+     ],
+     "blur_caught": 0.9214454654724517
+    },
+    "small_r95": {
+     "threshold": 0.040729600000000005,
+     "sharp_kept": 0.7972370634944063,
+     "sharp_kept_ci95": [
+      0.7624886438122787,
+      0.827549230340458
+     ],
+     "blur_caught": 0.9555658950796789
+    },
+    "small_r98": {
+     "threshold": 0.01123974000000001,
+     "sharp_kept": 0.6767128140036013,
+     "sharp_kept_ci95": [
+      0.6338755832799999,
+      0.7161312889077761
+     ],
+     "blur_caught": 0.9713853669884843
+    },
+    "sharp_kept_difference_u3_minus_small_r90": {
+     "value": -0.003601263394043097,
+     "ci95": [
+      -0.008819142658420164,
+      0.001352643143669484
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    },
+    "sharp_kept_difference_u3_minus_small_r95": {
+     "value": -0.011600791097204577,
+     "ci95": [
+      -0.020269833358954572,
+      -0.004150023995806177
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    },
+    "sharp_kept_difference_u3_minus_small_r98": {
+     "value": -0.03149629542167254,
+     "ci95": [
+      -0.047104983581104695,
+      -0.017760293579445755
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    }
+   },
+   "motion": {
+    "frames_with_measurement": 59668,
+    "spearman_logit_region_px": {
+     "u3": 0.7387829428461459,
+     "small": 0.7341717740026589
+    },
+    "spearman_ci95": {
+     "u3": [
+      0.7009944709425057,
+      0.7708698143562448
+     ],
+     "small": [
+      0.6951961505231675,
+      0.7659630946982435
+     ]
+    },
+    "spearman_difference_u3_minus_small": {
+     "ci95": [
+      -0.004134225900772409,
+      0.014489222878967256
+     ]
+    },
+    "spearman_m_inner_region_px": {
+     "u3": 0.7479868251027715,
+     "small": 0.741578647788829
+    },
+    "spearman_cell_px_p90_region_px_u3": 0.7536028025249244
+   },
+   "agreement_r95": {
+    "same_decision": 0.9541630354628947,
+    "cohen_kappa": 0.9079663106215043,
+    "spearman_logits": 0.9655402100086924,
+    "disagreements": 2735,
+    "of_which_the_vlm_label_sides_with_u3": 0.42778793418647165
+   },
+   "px_by_code": {
+    "sss": {
+     "n": 33877,
+     "L_median": 0.0040934,
+     "L_p10_p90": [
+      8.75462e-05,
+      0.4936120000000005
+     ],
+     "L_under_1px": 0.9271482126516516,
+     "cell_p90_median": 0.0044601,
+     "cell_max_median": 1.2305,
+     "cell_max_under_1px": 0.37547598665761434,
+     "cells_ge_1px_share_median": 0.00077042
+    },
+    "bsb": {
+     "n": 7530,
+     "L_median": 2.49695,
+     "L_p10_p90": [
+      0.0877068,
+      4.15063
+     ],
+     "L_under_1px": 0.24355909694555114,
+     "cell_p90_median": 2.3534,
+     "cell_max_median": 5.443,
+     "cell_max_under_1px": 0.022177954847277557,
+     "cells_ge_1px_share_median": 0.15954000000000002
+    },
+    "bbb": {
+     "n": 18261,
+     "L_median": 4.4001,
+     "L_p10_p90": [
+      2.3818,
+      7.9255
+     ],
+     "L_under_1px": 0.05317342971359729,
+     "cell_p90_median": 5.1394,
+     "cell_max_median": 6.7455,
+     "cell_max_under_1px": 0.012047532993811949,
+     "cells_ge_1px_share_median": 0.49576
+    }
+   },
+   "px_order_auc": {
+    "bbb>bsb": {
+     "u3_L": 0.824418188007694,
+     "u3_Lc_p90": 0.8319866509901834,
+     "u3_Lc_max": 0.7747776068025872
+    },
+    "bsb>sss": {
+     "u3_L": 0.935657425399699,
+     "u3_Lc_p90": 0.9256137595028276,
+     "u3_Lc_max": 0.9203908613070619
+    },
+    "bbb>sss": {
+     "u3_L": 0.9783986018658322,
+     "u3_Lc_p90": 0.9809577493075777,
+     "u3_Lc_max": 0.9704352219020604
+    }
+   }
+  },
+  {
+   "group": "validation + test (6 films)",
+   "films": [
+    "test film B",
+    "test film C",
+    "test film A",
+    "validation film A",
+    "validation film B",
+    "validation film C"
+   ],
+   "n_sharp": 71010,
+   "n_blur": 43677,
+   "auc": {
+    "u3": 0.9626970218062962,
+    "small": 0.9619642733821342
+   },
+   "auc_ci95": {
+    "u3": [
+     0.9541713168087541,
+     0.9691870293793409
+    ],
+    "small": [
+     0.9538167442750141,
+     0.9685681937400613
+    ]
+   },
+   "auc_difference_u3_minus_small": {
+    "value": 0.0007327484241620441,
+    "ci95": [
+     -0.0017285993514461362,
+     0.0028271238501476497
+    ]
+   },
+   "operating_points": {
+    "u3_r90": {
+     "threshold": 0.23623529999999998,
+     "sharp_kept": 0.8897197577805943,
+     "sharp_kept_ci95": [
+      0.8767862211509053,
+      0.9022470618862192
+     ],
+     "blur_caught": 0.908739153330128
+    },
+    "u3_r95": {
+     "threshold": 0.032112850000000026,
+     "sharp_kept": 0.7888043937473596,
+     "sharp_kept_ci95": [
+      0.7686568548738127,
+      0.8083998008502433
+     ],
+     "blur_caught": 0.9512100190031366
+    },
+    "u3_r98": {
+     "threshold": 0.007816700000000005,
+     "sharp_kept": 0.6363892409519786,
+     "sharp_kept_ci95": [
+      0.6126633645236731,
+      0.659627581418811
+     ],
+     "blur_caught": 0.9751127595759782
+    },
+    "small_r90": {
+     "threshold": 0.20402379999999956,
+     "sharp_kept": 0.8880298549500071,
+     "sharp_kept_ci95": [
+      0.875222454466981,
+      0.9008690835338331
+     ],
+     "blur_caught": 0.9089910021292671
+    },
+    "small_r95": {
+     "threshold": 0.040729600000000005,
+     "sharp_kept": 0.789762005351359,
+     "sharp_kept_ci95": [
+      0.769591119661366,
+      0.8090670986763243
+     ],
+     "blur_caught": 0.9512100190031366
+    },
+    "small_r98": {
+     "threshold": 0.01123974000000001,
+     "sharp_kept": 0.657696099140966,
+     "sharp_kept_ci95": [
+      0.6332387925530512,
+      0.6820473770360321
+     ],
+     "blur_caught": 0.9737161435080248
+    },
+    "sharp_kept_difference_u3_minus_small_r90": {
+     "value": 0.001689902830587231,
+     "ci95": [
+      -0.0020909940091871472,
+      0.005234775217501802
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    },
+    "sharp_kept_difference_u3_minus_small_r95": {
+     "value": -0.0009576116039994309,
+     "ci95": [
+      -0.006479474572922128,
+      0.004320445511707906
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    },
+    "sharp_kept_difference_u3_minus_small_r98": {
+     "value": -0.021306858188987476,
+     "ci95": [
+      -0.031290292667355134,
+      -0.012201448933925545
+     ],
+     "note": "the blurred caught differs between the files (each has its own validation thresholds)"
+    }
+   },
+   "motion": {
+    "frames_with_measurement": 114687,
+    "spearman_logit_region_px": {
+     "u3": 0.7042599627218804,
+     "small": 0.7050308228345334
+    },
+    "spearman_ci95": {
+     "u3": [
+      0.6759269048652714,
+      0.7303244023631615
+     ],
+     "small": [
+      0.6771529934612454,
+      0.7302489315709835
+     ]
+    },
+    "spearman_difference_u3_minus_small": {
+     "ci95": [
+      -0.00821531035218972,
+      0.007166451615997898
+     ]
+    },
+    "spearman_m_inner_region_px": {
+     "u3": 0.7099984965572468,
+     "small": 0.7154073941867979
+    },
+    "spearman_cell_px_p90_region_px_u3": 0.7298454923133632
+   },
+   "agreement_r95": {
+    "same_decision": 0.9493055010594051,
+    "cohen_kappa": 0.8985895610995174,
+    "spearman_logits": 0.9620169959905109,
+    "disagreements": 5814,
+    "of_which_the_vlm_label_sides_with_u3": 0.49415204678362573
+   },
+   "px_by_code": {
+    "sss": {
+     "n": 67609,
+     "L_median": 0.004731,
+     "L_p10_p90": [
+      0.0001458,
+      0.3913620000000005
+     ],
+     "L_under_1px": 0.9340768240914671,
+     "cell_p90_median": 0.006087,
+     "cell_max_median": 1.2562,
+     "cell_max_under_1px": 0.33834252836160866,
+     "cells_ge_1px_share_median": 0.00089882
+    },
+    "ssb": {
+     "n": 3401,
+     "L_median": 0.012161,
+     "L_p10_p90": [
+      0.00014813,
+      2.1114
+     ],
+     "L_under_1px": 0.8056453984122317,
+     "cell_p90_median": 0.0049428,
+     "cell_max_median": 1.9958,
+     "cell_max_under_1px": 0.25433695971773007,
+     "cells_ge_1px_share_median": 0.0038521
+    },
+    "bsb": {
+     "n": 14948,
+     "L_median": 2.4002499999999998,
+     "L_p10_p90": [
+      0.056063,
+      3.9565200000000016
+     ],
+     "L_under_1px": 0.2635135135135135,
+     "cell_p90_median": 2.044,
+     "cell_max_median": 5.3216,
+     "cell_max_under_1px": 0.018196414236018196,
+     "cells_ge_1px_share_median": 0.1433
+    },
+    "bbb": {
+     "n": 28729,
+     "L_median": 4.2088,
+     "L_p10_p90": [
+      2.0865799999999997,
+      6.688960000000002
+     ],
+     "L_under_1px": 0.055797278011765115,
+     "cell_p90_median": 4.8964,
+     "cell_max_median": 6.592,
+     "cell_max_under_1px": 0.007971039715966445,
+     "cells_ge_1px_share_median": 0.44825
+    }
+   },
+   "px_order_auc": {
+    "bbb>bsb": {
+     "u3_L": 0.8189060887540776,
+     "u3_Lc_p90": 0.8353222320420143,
+     "u3_Lc_max": 0.7596703146889353
+    },
+    "bsb>sss": {
+     "u3_L": 0.9318129449754085,
+     "u3_Lc_p90": 0.9188255697250011,
+     "u3_Lc_max": 0.9170791421195572
+    },
+    "bbb>sss": {
+     "u3_L": 0.9812600832136631,
+     "u3_Lc_p90": 0.9825874367558444,
+     "u3_Lc_max": 0.9729616436397066
+    }
+   }
+  }
+ ],
+ "films": [
+  {
+   "film": "test film B",
+   "role": "test",
+   "n_sharp": 20166,
+   "n_blur": 10786,
+   "auc": {
+    "u3": 0.97507708778128,
+    "small": 0.9756142136344734
+   }
+  },
+  {
+   "film": "test film C",
+   "role": "test",
+   "n_sharp": 4158,
+   "n_blur": 5525,
+   "auc": {
+    "u3": 0.9810713904831552,
+    "small": 0.9792021486139133
+   }
+  },
+  {
+   "film": "test film A",
+   "role": "test",
+   "n_sharp": 9553,
+   "n_blur": 9480,
+   "auc": {
+    "u3": 0.9557164592738446,
+    "small": 0.9544173831888805
+   }
+  },
+  {
+   "film": "validation film A",
+   "role": "validation",
+   "n_sharp": 14138,
+   "n_blur": 6234,
+   "auc": {
+    "u3": 0.9606892186932484,
+    "small": 0.9591345526539737
+   }
+  },
+  {
+   "film": "validation film B",
+   "role": "validation",
+   "n_sharp": 17362,
+   "n_blur": 6978,
+   "auc": {
+    "u3": 0.950769989536123,
+    "small": 0.9512726843484496
+   }
+  },
+  {
+   "film": "validation film C",
+   "role": "validation",
+   "n_sharp": 5633,
+   "n_blur": 4674,
+   "auc": {
+    "u3": 0.9638894402529382,
+    "small": 0.9646477968745977
+   }
+  }
+ ]
+}

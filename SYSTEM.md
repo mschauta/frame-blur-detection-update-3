@@ -71,8 +71,8 @@ flowchart LR
 
 | | binary photo ladder | continuous photo ladder |
 |---|---|---|
-| Generation 1 (VLM labels) | Update 1, Base and Small (0–3 / 16–30 px) | Update 3 (0–30 px, GOP-coded), in training |
-| Generation 2 (model 1's maps) | Update 2 (0–3 / 10–30 px, a stricter blurred side) | not yet run: it would learn Update 3's maps, if Update 3 passes |
+| Generation 1 (VLM labels) | Update 1, Base and Small (0–3 / 16–30 px) | Update 3 (0–30 px, GOP-coded) |
+| Generation 2 (model 1's maps) | Update 2 (0–3 / 10–30 px, a stricter blurred side) | not yet run: it would learn Update 3's maps (Section 2.7) |
 
 ### 2.2 The VLM's role: a binary bootstrap that is then transformed
 
@@ -189,7 +189,8 @@ at 10 px instead of 16 px, and its decision on the photo ladder moved from about
   2. Generation 2: M > 0, "no cell says blur", is defined without the VLM. Its recall points are still read off
      VLM-labelled frames for comparison.
   3. A continuous ladder: a px threshold, defined on the etalon alone. That it means the same on native frames is the
-     open condition (R4T-1 failed it; Update 3 tests it with the frame supervision kept).
+     open condition. R4T-1 failed it. Update 3, with the frame supervision kept, holds the order of the VLM codes
+     and of the motion inside a code, but its px on film depend on the codec.
 
 ### 2.6 Can the student surpass its teacher?
 
@@ -250,10 +251,25 @@ while not losing more than a fixed margin on the VLM labels:
 
 ### 2.7 The next step in this scheme
 
-- **Generation 1 with a continuous ladder (Update 3)** is in training. Its protocol decides whether it reduces the
-  frame-type bias without losing frame accuracy, and whether its px scale holds on native frames.
-- **If it passes, it becomes the teacher of a Generation 2 with a continuous ladder.** Its cell maps, and possibly its
-  px, over the whole corpus; the continuous GOP-coded ladder; the measurement veto; a fresh ImageNet start.
+- **Generation 1 with a continuous ladder (Update 3)** has been evaluated, and it met the three proposed criteria:
+  - the frame-type gap is gone on photo clips;
+  - the frame accuracy is unchanged;
+  - it orders 0–3 px.
+
+  Its px scale holds on native frames, in the order of the VLM codes and of the motion inside a code.
+- **Two results argue against using it as a teacher as it is:**
+  - Its cell map ranks the cells of a frame by motion less well than Update 1's (0.249 against 0.338). Update 2
+    learned Update 1's map closely, so a student would inherit this.
+  - On film it still reads x264 coding as blur. The I-frame preference fell, but x264-coded frames read 1–3 px
+    blurrier than the same frames in 10-bit HEVC or AV1. Update 1 has the same codec bias, so a student of either
+    model inherits it.
+- **What a Generation 2 with a continuous ladder would add:**
+  - Update 3's cell maps, and possibly its px, over the whole corpus;
+  - the continuous GOP-coded ladder;
+  - the measurement veto;
+  - a fresh ImageNet start.
+
+  Whether to run it is the author's decision.
 - **The conditions for any further generation** are in Section 15: new material, the same six held-out films never
   trained on, the photo anchors kept, and a stop when a generation does not improve on the witnesses.
 
@@ -323,15 +339,20 @@ while not losing more than a fixed margin on the VLM labels:
   residual.
 - **It is bounded** by the ladder (0–30 px) and by the coding chain it was taught through.
 - **It is quantised by the threshold grid.** A confident L̂ counts the thresholds passed, so it reads about half a
-  step short, and below the first threshold it reads almost 0. Update 3 validation photos at epoch 19 (interim):
-  true 4.0 px reads 3.4 px, 0–1 px reads 0.15 px, and the top reads shorter still (23.6 px reads 19.8 px, against 22.2 px at epoch 12: more than
-  the quantisation explains, while below 8 px the readings moved closer to the truth); the pair
-  order of 0 px against 0–1 px photos is 0.72. A px cut is best set on a threshold of the grid.
+  step short, and below the first threshold it reads almost 0.
+  - **Update 3 validation photos at epoch 29:**
+    - true 4.0 px reads 3.25 px, and 0–1 px reads 0.07 px;
+    - the top reads shorter still: 23.6 px reads 19.7 px, against 22.2 px at epoch 12. That is more than the
+      quantisation explains;
+    - the pair order of 0 px against 0–1 px photos is 0.74.
+  - **On the Update 1 ladder** (single-frame CRF 23) it reads 0.34 px at 1 px, 2.40 px at 3 px and 23.5 px at 30 px.
+
+  A px cut is best set on a threshold of the grid.
 - **With frame supervision beside it, the frame boundary gets a px position that nothing pins.** Photos and frames
   meet only in the shared network, and the position moves during training (Section 12.3).
-- **With a floating anchor, the frame-level px is an order, not a length.** Update 3, interim: the median `bbb`
-  frame read 7.7 px at epoch 0 and 5.5 px at epoch 12; in epochs 15–19 it varied between 3.5 and 4.8 px, while its
-  median logit swung between 4.6 and 7.6. Two causes are possible:
+- **With a floating anchor, the frame-level px is an order, not a length.** In Update 3 the median `bbb` frame read
+  7.7 px at epoch 0 and 5.5 px at epoch 12. In epochs 15–19 it varied between 3.5 and 4.8 px, while its median logit
+  swung between 4.6 and 7.6. At epoch 29 it reads 4.0 px (on the held-out films 4.2 px). Two causes are possible:
   - the scale: under noisy binary labels the frame logits grow more slowly than the photo offsets, which keep
     spreading to fit lengths up to 30 px;
   - the readout: the frame score lies about log(n / k) / r below a blurred share k / n of the cells, and r fell from
@@ -344,6 +365,12 @@ while not losing more than a fixed margin on the VLM labels:
   frame px follows the label more than the size of the motion. Steady pans of 4–16 px per frame read at most 0.1 px in
   the median, and the VLM calls 58% of the pans sharp.
 
+  The cell map was measured after the run:
+  - inside one VLM code, the cell readouts follow the motion as Update 1 Small's do;
+  - inside one frame, the map ranks the cells by motion less well (0.249 against 0.338);
+  - on steady pans the cells do not hide blur either: at 4–16 px per frame even the largest inner cell reads 1.4–1.5
+    px.
+
   An exposure-free measurement shows that the pans are blurred. It compares the gradient energy along the pan axis
   with the energy across it, against static frames of the same film, and is calibrated with the ladder's kernel. At
   8–16 px of pan per frame it estimates 5–6 px of blur, while the model reads 0.04 px. The px value is provisional:
@@ -352,8 +379,8 @@ while not losing more than a fixed margin on the VLM labels:
   these pans, and Update 1 Small keeps them as sharp just as often. On frames the label overrides the photo scale
   here.
 
-  Whether the cell px keep their scale has to be measured on the cell map. That is where the px belong: a frame can
-  carry camera and subject blur at once.
+  The cell map is where the px belong, because a frame can carry camera and subject blur at once. Its measurement
+  after the run is summarised above.
 
 ### 3.4 The blur mass M (Update 2)
 
@@ -404,7 +431,9 @@ over the inner cells.
   - the length loses the location;
   - M loses the length.
 
-**The approach that follows from this.** Update 3 starts this design; it is not yet validated.
+**The approach that follows from this.** Update 3 starts this design. Its evaluation supports step 1 on photos,
+and on frames for the order inside a VLM code. Inside a frame its cell map ranks motion less well than Update 1's, and
+its px on film depend on the codec.
 1. **Measure per cell, in px:** frame supervision says where, photo supervision says how much. Whether the cell px of
    frames keep the photo scale under a floating anchor is the open condition (Section 3.3).
 2. **Derive the frame readouts from that map:**
@@ -614,6 +643,11 @@ exists to make one coding property the same on photos and frames, so that the mo
    - **Update 3's fix:** the photo goes through an 8-frame clip (x264 / x265 / AV1; I-only, IP or IPB; whole-pixel
      pans; film grain on part of the AV1 samples), and the sample is one decoded frame of it. About 70% of the photo
      samples are inter frames.
+   - **Its result, on photo clips:** the gap is gone in all three codecs.
+     - R4K-2: P/B − I-only is +0.00 logit, against +13.2 for Update 1 Small (CRF 23, pan).
+     - GOP ladder: a clip's I- and P/B frames differ by at most 0.015 px.
+   - **Its result, on film:** the I-frame preference fell to a third or less of Update 1 Small's. But x264 coding as
+     a whole reads as blur on film frames, for both models (Section 17).
 4. **The rest of the chain:** BT.709, TV range, 4:2:0, as in the frames. The CRF varies:
    - Update 1 and Update 2: 20 / 23 / 26 / 28.
    - Update 3: per-codec lists matched to about 35–41 dB PSNR.
@@ -628,7 +662,7 @@ quality is filtered out, never taught as acceptable.
 | original, Update 1 | 0, 1, 2, 3 px | 16, 20, 24, 30 px | 4–15 px not trained | easy separation; the decision flips at about 9 px on the photo ladder; no order inside 0–3 px (pair order 0.62 Base, 0.66 Small) |
 | Update 2 | 0–3 px | 10, 12, 16, 20, 24, 30 px | 4–9 px not trained | the flip moves to about 6.9 px, inside the gap |
 | R4T-1 (photos only) | continuous 0–30 px, as a length | | — | orders 0–3 px on photos (0.945); fails on frames (Section 14) |
-| Update 3 | continuous 0–30 px, as a length | | — | in training |
+| Update 3 | continuous 0–30 px, as a length, GOP-coded | | — | orders 0–3 px (0.996 on the Update 1 ladder); the frame decision flips at about 1.2 px of photo blur; on frames 5.6% of `bbb` under 1 px |
 
 **Why the gap at first.** The 0–3 px tolerance was set with the VLM: up to 3 px it answers on blurred photos as
 on the original. The 16 px start of the blurred side was a visual choice. Without an intermediate band, the photos
@@ -899,7 +933,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
 | what | how fast | evidence |
 |---|---|---|
 | the photo extremes (0–3 px against 16–30 or 10–30 px) | at once, and with full confidence | photo validation AUC ≥ 0.999 at every epoch of the original runs; in Update 2, 0.9997 after the first epoch and 1.000 from the second. The logits saturate: Update 1's median logit is −22 from 0 to 6 px and +22 at 30 px. Update 2's photo loss is almost always met by epoch 10 |
-| the order of photo lengths | within the first epoch, then refined | R4T-1 after one epoch: neighbouring-pair order 0.86, 0–3 px 0.78; after ten: 0.99 and 0.95. Update 3: Spearman 0.961 after one epoch, 0.988 after thirteen, 0.991 after twenty; MAE 1.59, 1.03 and 1.44 px, the last mostly from the top of the ladder reading short (0–3 px: 0.29 px; interim) |
+| the order of photo lengths | within the first epoch, then refined | R4T-1 after one epoch: neighbouring-pair order 0.86, 0–3 px 0.78; after ten: 0.99 and 0.95. Update 3: Spearman 0.961 after one epoch, 0.988 after thirteen, 0.991 after twenty, 0.992 after thirty; MAE 1.59, 1.03, 1.44 and 1.43 px, the last two mostly from the top of the ladder reading short (0–3 px: 0.29 px) |
 | clear frames (the confident set) | one to two epochs | Update 1 Base confident AUC 0.970 → 0.991 → 0.995 in epochs 0–2, and 0.995 at the end |
 | the general frame decision | fast first, then slowly to the end | Update 1 Base AUC 0.869 → 0.921 (epochs 0–1), 0.957 at epoch 18, 0.962 at epoch 29 |
 | the strict operating points and the close-ups | slowly and continuously, to the last epoch | Update 1 Base, sharp frames kept at 98%: 11.7 → 25.1 → 32.4% (epochs 0–2), 66.5% at epoch 29. Close-up sharp kept: 21.3% → 41.2% (epoch 2) → 57.5% |
@@ -907,9 +941,9 @@ in the original runs, 48,000 in Update 1 and Update 3.
 | without a pretrained trunk | very slowly | random start (Base): AUC 0.65 after three epochs (144,000 samples) |
 | a self-supervised trunk (DINOv3) | slower, with larger swings; it settles late | it reaches its level only after about epoch 45 of 60 |
 | transfer from photo-only training to frames | highest at the start, then lost | R4T-1 without mosaic: confident AUC 0.943 after one epoch, falling to 0.862 by epoch 9 as the model specialises on photos |
-| the coded frame type on photos, when GOP-coded photos are taught | within two epochs | Update 3 validation photos: no I versus P/B gap by epoch 2, none at epochs 12 and 19 (0 px: 0.03 against 0.02 px, and 0.04 against 0.04 px; interim) |
-| where the frame boundary falls on the photo length (floating anchor) | it keeps moving | Update 3: the true photo length at which the frame decision flips was 3.0, 2.5, 4.0 px in epochs 0–2, 1.75–2.11 px in epochs 7–12 and 1.04–1.59 px in epochs 13–19; the zero of the offsets b_k fell from 3.21 to 1.11 px (epoch 15) and 0.98 px (epoch 19), by about 0.04 px per epoch at the end (interim) |
-| the frame-level px (floating anchor) | it fell in epochs 0–12, as the photo scale stretched and r fell; since then it varies by epoch | Update 3: median `bbb` frame 7.7 → 5.5 px at epochs 0 / 12, then 3.5–4.8 px in epochs 15–19, while its median logit swung between 3.9 and 7.6 and r went 2.98 → 0.76 → 0.70; the steady camera pans fell most, so the cause is the scale rather than the readout; the cell px not yet measured (interim) |
+| the coded frame type on photos, when GOP-coded photos are taught | within two epochs | Update 3 validation photos: no I versus P/B gap by epoch 2, none at epochs 12, 19 and 29 (0 px: 0.03 against 0.02 px, 0.04 against 0.04 px, 0.02 against 0.01 px); none on the unseen R4K-2 clips either |
+| where the frame boundary falls on the photo length (floating anchor) | it keeps moving | Update 3: the true photo length at which the frame decision flips was 3.0, 2.5, 4.0 px in epochs 0–2, 1.75–2.11 px in epochs 7–12 and 0.80–1.59 px in epochs 13–29 (1.21 px at epoch 29); the zero of the offsets b_k fell from 3.21 to 1.11 px (epoch 15), 0.98 px (epoch 19) and 0.90 px (epoch 29) |
+| the frame-level px (floating anchor) | it fell in epochs 0–12, as the photo scale stretched and r fell; since then it varies by epoch | Update 3: median `bbb` frame 7.7 → 5.5 px at epochs 0 / 12, then 3.5–4.8 px in epochs 15–19, while its median logit swung between 3.9 and 7.6 and r went 2.98 → 0.76 → 0.70; the steady camera pans fell most, so the cause is the scale rather than the readout; 4.0 px at epoch 29; the cells follow the label too (steady pans labelled `sss`: 0.00–0.06 px) |
 | memorising repeated frames | continuously, as long as frames repeat | original runs: training AUC rises to 0.992–0.997 while validation flattens after the third pass |
 | calibration and confidence | never settles | the threshold that maximises balanced accuracy swings from epoch to epoch (Update 1 Small: 0.10–0.89); the NLL drifts up while the ordering improves (original RGB: 0.41 → 0.58); the LSE sharpness r drifts down (Update 1: 4.1 → 0.86) |
 | the last gains | in the learning-rate decay | Update 1 Base: new highs at epochs 21–22 and the best at 29; Update 2: 17.5% of the fit in the last four epochs (Section 12.2) |
@@ -921,12 +955,15 @@ in the original runs, 48,000 in Update 1 and Update 3.
   sharpest-looking blurred frames. These keep improving as new frames arrive and as the learning rate falls. They are
   why a run is not stopped at its first plateau.
 - **Never converges:** calibration. Read decisions from recall points, not from the score as a probability.
-- **Interim, Update 3:** one epoch gave a frame AUC of 0.913, against 0.875 for Update 1 Small. Over epochs 0–19 the
-  mean was 0.941 against 0.936, and Update 3 was ahead in 15 of the 20 epochs. The lead varies: level in epochs 9–12
-  (0.945 against 0.944), ahead in epochs 13–15 (0.953 against 0.948; sharp frames kept at 98%: 58.1% against 54.2%),
-  level again in epochs 16–19 (0.953 against 0.953, ahead in 2 of 4; at 98%: 57.0% against 55.6%). With one run per
-  recipe, this does not show that the continuous GOP-coded ladder speeds up learning; it does show no loss on the
-  frames so far.
+- **Update 3:** one epoch gave a frame AUC of 0.913, against 0.875 for Update 1 Small.
+  - **Over epochs 0–19** the mean was 0.941 against 0.936, ahead in 15 of 20. The lead varied: level in epochs 9–12,
+    ahead in 13–15, level again in 16–19.
+  - **Over epochs 20–29** the mean was 0.960 against 0.959, ahead in 9 of 10.
+  - **At epoch 29:** 0.9617 against 0.9612. On the held-out films 0.9627 against 0.9620, a difference of +0.0007
+    [−0.0017, +0.0028].
+
+  The lead was largest early and shrank to almost nothing. With one run per recipe, this does not show that the
+  continuous GOP-coded ladder speeds up learning; it does show no loss on the frames.
 
 ### 12.4 Choosing the checkpoint
 
@@ -965,7 +1002,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
 | Update 1 Small (`round3_small_p99_ep029.pt`) | the same | 0.2040 / 0.0407 / 0.0112 | 79.0% / 65.8% |
 | Update 2 (`v9_base_selfmap_v2_ep019.pt`) | blur mass M, built-in (inner cells) | M > 0.04731 / 0.007882 / 0.000887; M > 0 is the strictest | test films: 77.2% / 64.1% kept at r95 / r98; 49.1% at M > 0 |
 | R4T-1 (photo-only, not published) | px | a length: < 1 px is the absolute rule | the absolute rule passes about 1/3 of the VLM-sharp non-close-up frames and 1/8 of the close-ups; 3 px passes about 2/3 of true 3 px photos |
-| Update 3 | the decision logit (s = 0: the VLM boundary) plus px | r90 / r95 / r98 from the validation frames; or a px threshold | to be set after epoch 29 |
+| Update 3 (`update3_small_p99_ep029.pt`) | the decision logit (s = 0: the VLM boundary, about 0.9 px on its scale) plus px | 0.2362 / 0.0321 / 0.0078 (0.355 / 0.052 / 0.013 px); or a px threshold | held-out: 78.9% / 63.6% of the sharp kept at r95 / r98; r95 calls 21% of coded 0 px photos blurred |
 
 **By task:**
 - **Phase I, keep only the sharp frames:** a strict recall point (r98, or M > 0) on the whole frame.
@@ -973,7 +1010,9 @@ in the original runs, 48,000 in Update 1 and Update 3.
   - Update 1's score does not order 0–3 px (0.62–0.66).
   - Update 2's M ties.
   - Update 2's mean inner cell logit orders 82% of 0–3 px photo pairs, but this is not shown on frames.
-  - Every model so far prefers I-frames when ranking (R4K-1). This is what Update 3 addresses.
+  - Every model before Update 3 prefers I-frames when ranking (R4K-1). Update 3 cuts this on film to a third or
+    less (5 s windows on AVC: 23–24× against 69–82× for Update 1 Small), but does not remove it. Its px also depend
+    on the codec (Section 17).
 - **Film with deliberate defocus, or a subject crop:** the frame threshold is the wrong tool. Use the cell map within
   a subject mask, or crop and re-score: the p99 scale is recomputed on the crop.
 - **Unknown video:** spot-check with the VLM. The extremes (lowest and highest scores) should agree almost 100%, and
@@ -989,7 +1028,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
 | Update 1 Base | 589,663 frames, binary photos 0–3 / 16–30 px | a decision, plus a cell map | AUC 0.963; 80.4 / 67.9% at r95 / r98 | no (0.62) | yes: within-frame Spearman 0.34 with the measured motion (160 px cells); frame score 0.71 / 0.73 with region / subject motion, 0.20 with camera motion | yes (R4K-1, R4K-2) |
 | Update 1 Small | the same | the same | AUC 0.962; 79.0 / 65.8% | no (0.66) | its M follows the motion as the Base's does (Spearman 0.715 against 0.716) | yes, more false alarms |
 | Update 2 | Update 1's cell maps on 4.85 M frames, photos 0–3 / 10–30 px | blur mass and a map | AUC 0.959; test films 77.2 / 64.1% | M ties; mean cell logit 82% (photos) | follows Update 1's map (M Spearman 0.973) and the motion (0.685) | yes (R4K-1: 86% against Update 1's 93%) |
-| Update 3 | Update 1's frames, a continuous GOP-coded ladder | a decision plus px | after epoch 29 | to be measured | to be measured | to be measured |
+| Update 3 | Update 1's frames, a continuous GOP-coded ladder | a decision plus px, and a px map | AUC 0.963; 78.9 / 63.6% | yes (0.996) | weaker inside a frame (within-frame Spearman 0.25 against 0.34); inside a VLM code its cells follow the motion as Update 1 Small's | none on photo clips; on film the I-frame preference is a third or less of Update 1's, but x264 coding reads as blur |
 
 **Consistency of Update 1 over the whole corpus:**
 - **Inside a shot:** the measured motion separates its blurred from its sharp frames with a median AUC of 0.854; the
@@ -1098,7 +1137,10 @@ labels.
 - deliberate defocus as film language (use maps with masks or crops);
 - untextured or dark regions;
 - uncoded or JPEG images (outside the chain);
-- other resolutions, HDR, and codecs other than H.264 (untested before Update 3);
+- other resolutions and HDR (untested);
+- codecs other than H.264. Every training video is H.264 8 bit. On the same film frames, x264 coding reads 1–3 px
+  blurrier than 10-bit HEVC or AV1 for Update 3, and about 2 logits blurrier for Update 1 Small (Update 3, item 5).
+  Between two H.264 releases of a film the two models agree as well as each other (85% at r95);
 - a single seed per run.
 
 ## 18. Recipe: building a dataset and a model
@@ -1131,13 +1173,14 @@ labels.
 ## 19. Open questions
 
 - **The photo : frame ratio,** isolated from other changes.
-- **The transfer of a photo-learned px scale to native frames** (R4T-1 failed; Update 3 tests it with frame
-  supervision kept).
+- **The transfer of a photo-learned px scale to native frames.** R4T-1 failed. Update 3, with the frame supervision
+  kept, holds the order of the VLM codes and of the motion inside a code. Its px on film depend on the codec.
 - **Whether the cell px of frames keep their scale, and how to calibrate them.** The frame-level px fell during
-  training (Update 3, interim), and it follows the label more than the motion; the cell map has not been measured.
+  training (Update 3), and it follows the label more than the motion. The cell readouts follow the motion inside a
+  VLM code as Update 1's do, and rank the cells of a frame less well.
   For steady camera pans the frame equals its cells, and these read almost 0 px up to 16 px of pan per frame. An
   exposure-free check (directional gradient energy, calibrated with the ladder's kernel) found 5–6 px of blur there.
-  The scale does not reach pan blur on frames, and the same holds for Update 1 Small (interim). The same check gives
+  The scale does not reach pan blur on frames, and the same holds for Update 1 Small. The same check gives
   the exposure fraction per film (0.35–0.60), which is the frame-side reference the calibration below needs. Both
   numbers are provisional: the kernel was applied after coding, while real pans are blurred before it. A calibration
   in the right order needs no deblocking model: blur the uncoded 0 px photos, pan them at 8–16 px per frame, and code
@@ -1150,8 +1193,10 @@ labels.
     fraction is unknown per film. The motion fixes order and proportion, not the absolute value. That needs one
     reference on frames: a known shutter, or the cells most like the photos (uniform camera pans).
   - **The price:** the motion witness used for calibration is no longer independent (Section 2.3).
-- **Whether GOP-coded anchors remove the frame-type bias on film,** not only on photos (Update 3, items 5 and 6 of its
-  protocol).
+- **The codec on the frame side.** GOP-coded anchors removed the frame-type bias on photos and reduced it on film.
+  But x264 coding as a whole still reads as blur on film frames (Update 3, item 5). Every training frame is H.264.
+  Frames from other codecs, or the same film in several codecs, would be the next lever. Why x264 coding adds blur on
+  film frames and not on photo clips is open.
 - **Darkness:** input effect or real blur.
 - **Seed variation; warm-up-stable-decay against cosine** on the same data.
 - **Film language:** deliberate defocus, 24 fps, streaming codecs, HDR. Test the VLM questions there before relying
