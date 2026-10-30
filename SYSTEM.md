@@ -346,7 +346,9 @@ while not losing more than a fixed margin on the VLM labels:
 
   An exposure-free measurement shows that the pans are blurred. It compares the gradient energy along the pan axis
   with the energy across it, against static frames of the same film, and is calibrated with the ladder's kernel. At
-  8–16 px of pan per frame it estimates 5–6 px of blur, while the model reads 0.04 px. The VLM codes do not separate
+  8–16 px of pan per frame it estimates 5–6 px of blur, while the model reads 0.04 px. The px value is provisional:
+  the calibration blurred decoded frames, the reverse of the real order (blur, then coding), and the direction of that
+  bias is not known. The comparison with the static frames does not depend on it. The VLM codes do not separate
   these pans, and Update 1 Small keeps them as sharp just as often. On frames the label overrides the photo scale
   here.
 
@@ -1136,7 +1138,10 @@ labels.
   For steady camera pans the frame equals its cells, and these read almost 0 px up to 16 px of pan per frame. An
   exposure-free check (directional gradient energy, calibrated with the ladder's kernel) found 5–6 px of blur there.
   The scale does not reach pan blur on frames, and the same holds for Update 1 Small (interim). The same check gives
-  the exposure fraction per film (0.35–0.60), which is the frame-side reference the calibration below needs. Pinning the frames' boundary to a chosen px would
+  the exposure fraction per film (0.35–0.60), which is the frame-side reference the calibration below needs. Both
+  numbers are provisional: the kernel was applied after coding, while real pans are blurred before it. A calibration
+  in the right order needs no deblocking model: blur the uncoded 0 px photos, pan them at 8–16 px per frame, and code
+  them with the ladder's own path. Panned at L = 0, they also show whether coding alone makes the directional loss. Pinning the frames' boundary to a chosen px would
   fix only where the boundary lies, not the scale. The path suggested by the author:
   - if the cell map orders the cells as the measured motion does, and in proportion to it, it can be calibrated;
   - the calibrated map is then learned back as a per-cell length target: the continuous Generation 2. That target

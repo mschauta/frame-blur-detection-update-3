@@ -172,12 +172,12 @@ In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2
   the results).
   - **The method:** motion blur absorbs the gradient along its direction. Per frame, the ratio of gradient energy
     along the measured pan axis to the energy across it was compared with static frames of the same film. It was
-    turned into px with the photo ladder's own kernel, applied to static frames of each film.
+    turned into px with the photo ladder's own kernel, applied to decoded static frames of each film.
   - **What it found** at 8–16 px of pan per frame, with two pre-filter scales:
-    - an estimated blur of 5.1 / 6.1 px in the median, where the model reads 0.04 px;
+    - an estimated blur of 5.1 / 6.1 px in the median (provisional, see the limits), where the model reads 0.04 px;
     - 46–55% of the pans fall below the static frames' 10th percentile, against 10% without blur;
     - inside a shot, faster pans lose more gradient along the pan in 73–76% of 176 shots;
-    - the implied exposure fraction is 0.35–0.60 by film, around a common 180° shutter.
+    - the implied exposure fraction is 0.35–0.60 by film, around a common 180° shutter (provisional).
   - **No separation by label:** the VLM codes do not separate these pans (`sss` 5.3 px, `bbb` 5.5 px), and the
     model's px does not follow the estimate (Spearman 0.01).
   - **Not new in Update 3:** Update 1 Small keeps the same share of these pans as sharp at the 95% point (57%,
@@ -185,8 +185,18 @@ In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2
 
   On steady pans the photo scale does not reach the frames: the frame label overrides it. This is a weak spot for
   item 6, inherited from the labels (interim).
-  - **Limits:** the calibration also blurs the film grain, so the estimate leans low. At slow pans (4–8 px per frame,
-    estimate 1.4–1.5 px), the codec's sub-pixel motion compensation may add smoothing along the motion.
+  - **Limits:**
+    - **The calibration runs in the wrong order** (pointed out by the author). It blurs frames that are already
+      coded, while the ladder and a real pan are blurred first and coded after. So the px values and the exposure
+      fraction are provisional, and the direction of their bias is not known. Block edges and grain laid on after the
+      blur would make the estimate low; the codec's motion compensation and bit allocation could push it the other
+      way. Doing it in the right order on frames would need the frame before coding, that is a deblocking model.
+    - **What holds without the calibration:** the comparison with the same film's static frames, coded the same way,
+      the trend with pan speed inside shots, the model's ~0 px, and the same behaviour of Update 1 Small.
+    - **Still open:** whether coding alone, without blur, makes such a directional loss in a pan of 8–16 px per
+      frame. The trend with speed argues against it but does not exclude it.
+    - The calibration also blurs the film grain. At slow pans (4–8 px per frame, estimate 1.4–1.5 px), the codec's
+      sub-pixel motion compensation may add smoothing along the motion.
 - **One px per frame is the wrong object anyway:** a frame can carry camera blur and subject blur at once. The cell
   map is what has to hold the px. Whether the cell px keep their scale is not yet measured (items 4 and 6).
 - **The share of `bbb` frames under 1 px is partly met by construction.** The frame label trains the same score s
