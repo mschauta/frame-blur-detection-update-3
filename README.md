@@ -7,7 +7,7 @@ fingerprint of the [RGB Mesh Resampling](https://github.com/mschauta/rgb-mesh-re
 changes is what the photo anchors teach. The earlier models learned a class from them: sharp or blurred. Update 3
 learns a length: how many pixels of camera blur a frame carries, from 0 to 30 px.
 
-**Status, 2026-10-30: training** (epoch 16 of 30). There are no weights and no results yet. This repository records three things
+**Status, 2026-10-30: training** (epoch 20 of 30). There are no weights and no results yet. This repository records three things
 before the results exist:
 
 - how the three recipes differ;
@@ -105,21 +105,23 @@ Update 3 learns from two kinds of signal, and each sets a different part of the 
   to the frames except the shared network, so the position can move during training, and it did (interim values;
   the fixed checkpoint is epoch 29):
   - **on the true photo length,** the length at which the frame decision flips on the validation photos was 3.0,
-    2.5 and 4.0 px in epochs 0–2, 1.75–2.11 px in epochs 7–12, and 1.23–1.59 px in epochs 13–15;
+    2.5 and 4.0 px in epochs 0–2, 1.75–2.11 px in epochs 7–12, and 1.04–1.59 px in epochs 13–19, varying from
+    epoch to epoch (1.04 px at epoch 19);
   - **on the model's own scale,** the zero of the offsets b_k sat at 3 px at the start, at 3.21, 3.11 and 2.84 px
-    after epochs 0–2, at 1.28 px after epoch 12 and at 1.11 px after epoch 15: still falling, more slowly. On the
-    threshold grid the two readings agree: the boundary lies between the 1 and 2 px thresholds. Inside a step the
-    offsets do not locate it (next paragraph).
+    after epochs 0–2, at 1.28 px after epoch 12, 1.11 px after epoch 15 and 0.98 px after epoch 19: still falling,
+    by about 0.04 px per epoch. On the threshold grid the two readings agree to within a step: at epoch 19 both lie
+    near the 1 px threshold. Inside a step the offsets do not locate it (next paragraph).
 - **The measured length is quantised by the thresholds.** A confident reading counts the thresholds passed, so it
-  reads about half a threshold step short, and below 1 px it reads almost 0. On the validation photos at epoch 12,
-  true 4.0 px reads 3.15 px (median), true 24 px reads 22 px, and true 0–1 px reads 0.05 px (interim).
+  reads about half a threshold step short, and below 1 px it reads almost 0. On the validation photos at epoch 19,
+  true 4.0 px reads 3.4 px (median), true 0–1 px reads 0.15 px, and the top of the ladder reads shorter still: true
+  23.6 px reads 19.8 px (interim).
 
 The class is then chosen when filtering, not in training, in line with the series' principle that 0 px is absolutely
 sharp:
 
-- **keep the VLM boundary,** between 1 and 2 px of photo blur so far, and still moving;
+- **keep the VLM boundary,** between 1 and 1.6 px of photo blur in epochs 13–19, and still moving down;
 - **or set a stricter length,** for example 1 px, where the use needs it. Below 1 px the scale does not resolve
-  (0 px against 0–1 px photos: pair order 0.68 at epoch 12).
+  (0 px against 0–1 px photos: pair order 0.72 at epoch 19).
 
 **The condition.** A px threshold on a real frame means something only if the length scale learned on photos
 transfers to film frames. That is not shown yet. An earlier photo-only test (R4T-1, not yet published) learned the
@@ -127,27 +129,33 @@ scale on photos, but on native frames it measured 17–29% of the frames that th
 under 1 px. Evaluation item 6 tests exactly this. Until it passes, a px value on a frame is a hypothesis.
 
 **Interim, validation frames:** the measured length of the whole frame, read from the frame score, follows the VLM
-codes, but its values shrink as training goes on.
+codes. Its values fell in epochs 0–12; since then they vary from epoch to epoch without a clear trend, and epoch 15
+was a low point.
 
 | median measured length | `sss` | `ssb` | `bsb` | `bbb` | `bbb` under 1 px |
 |---|---|---|---|---|---|
-| epoch 0 | | | | 7.70 px | |
+| epoch 0 | | | 4.79 px | 7.70 px | |
 | epoch 12 | 0.02 px | 0.02 px | 2.80 px | 5.48 px | 4.3% |
 | epoch 15 | 0.01 px | 0.03 px | 1.69 px | 3.54 px | 8.4% |
+| epoch 19 | 0.01 px | 0.03 px | 2.86 px | 4.81 px | 4.4% |
+
+In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2.9 px.
 
 - **Two causes are possible, and the frame score cannot separate them:**
-  - **the scale:** the frames' logits stay bounded, because noisy binary labels do not reward larger values (the
-    median `bbb` logit was 3.9 at epoch 0 and 4.6 at epoch 15), while the photo offsets keep spreading (b at 8 px:
-    4.2 → 11.8). The same frame score then reads as fewer pixels;
+  - **the scale:** the frames' logits grow more slowly than the photo offsets. The median `bbb` logit swings from
+    epoch to epoch (3.9 at epoch 0, 7.3 at epoch 12, 4.6 at epoch 15, 7.6 at epoch 19), because noisy binary labels
+    do not reward larger values. Meanwhile the photo offsets keep spreading (b at 8 px: 4.2 → 10.9 → 12.9 at epochs
+    0 / 12 / 19), so the same frame score reads as fewer pixels;
   - **the readout:** the frame score is a log-mean-exp of the cell logits with the learned sharpness r. When a share
     k / n of the cells is blurred, the frame score is about log(n / k) / r below those cells. r fell from 2.98 to
-    0.72 during training, so for local blur the frame reads ever lower than its blurred cells. For uniform blur the
-    frame score equals the cells', and this cause does not apply.
+    0.76 by epoch 12, so for local blur the frame reads ever lower than its blurred cells. Since then r has barely
+    moved (0.70 at epoch 19), so this cause can explain only the fall of epochs 0–12. For uniform blur the frame
+    score equals the cells', and this cause does not apply.
 - **One px per frame is the wrong object anyway:** a frame can carry camera blur and subject blur at once. The cell
   map is what has to hold the px. Whether the cell px keep their scale is not yet measured (items 4 and 6).
 - **The share of `bbb` frames under 1 px is partly met by construction.** The frame label trains the same score s
   that the px scale reads, so a frame the model calls blurred cannot measure much under the boundary: the `bbb`
-  frames under 1 px are roughly those the model calls sharp (7.8% at epoch 15).
+  frames under 1 px are roughly those the model calls sharp (4.4% and 3.9% at epoch 19).
 - **The informative part of item 6** is the order inside a class, against the measured motion.
 
 ## Why the photos must carry the codec correction
@@ -177,8 +185,8 @@ shows that photos alone do not carry the measurement to native frames, so a larg
 decision (evaluation item 2).
 
 **Interim, validation photos:** by epoch 2 the I versus P/B gap has disappeared on the validation photos. At 0 px the
-median measured length was 0.40 px on I targets and 0.36 px on P/B targets at epoch 2, and 0.03 and 0.02 px at
-epoch 12; per codec the two differ by at most 0.02 px. This is the training distribution, so it was expected. It
+median measured length was 0.40 px on I targets and 0.36 px on P/B targets at epoch 2, 0.03 and 0.02 px at
+epoch 12, and 0.04 and 0.04 px at epoch 19; per codec the two differ by at most 0.04 px. This is the training distribution, so it was expected. It
 does not answer the question on film.
 
 ## The run
@@ -218,7 +226,7 @@ The proposed criteria are in the protocol; the decision is the author's. Four ca
   and 6.
 - **Item 6 is partly met by construction too** (noted at epoch 12): the VLM label trains the score that the px scale
   reads, so the order of the VLM codes in px follows from the frame decision. What it cannot force is the order
-  inside a class and the agreement with the measured motion. The frame-level px shrinks during training (noted at
+  inside a class and the agreement with the measured motion. The frame-level px fell during training (noted at
   epoch 15, above), so the px are judged on the cell map.
 - **One run, three changes:** the coding, the continuous ladder and the dropped masks. If the result improves, the
   causes cannot be separated without the other runs of the 2×2 design (photo coding × ladder shape).
