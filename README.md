@@ -290,6 +290,7 @@ The proposed criteria are in the protocol; the decision is the author's. Five ca
     - Update 1 Base reads every keyframe as sharp, with a light jump (10 of 10) or without one (11 of 12);
     - a light jump on a P-frame changes nothing (1 of 26 sharp).
 
+    Update 2 (v9) gives the same counts on the same frames, and 84% of the keyframes have a blur mass of exactly 0.
     The flash frames read sharp because of the frame type, not the light. The keyframes sit at the same places in
     every codec, so the P-frame light jumps are the control for item 5.
 
