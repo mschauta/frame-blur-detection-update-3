@@ -342,8 +342,13 @@ while not losing more than a fixed margin on the VLM labels:
   scale. Over epochs 0–12 the steady camera pans, where the frame equals its cells, lost more px than the
   subject-motion frames. Inside the `bbb` code the moving area does not change the frame px at moderate motion. The
   frame px follows the label more than the size of the motion. Steady pans of 4–16 px per frame read at most 0.1 px in
-  the median, and the VLM calls 58% of the pans sharp. Whether they are blurred depends on the unknown exposure
-  fraction.
+  the median, and the VLM calls 58% of the pans sharp.
+
+  An exposure-free measurement shows that the pans are blurred. It compares the gradient energy along the pan axis
+  with the energy across it, against static frames of the same film, and is calibrated with the ladder's kernel. At
+  8–16 px of pan per frame it estimates 5–6 px of blur, while the model reads 0.04 px. The VLM codes do not separate
+  these pans, and Update 1 Small keeps them as sharp just as often. On frames the label overrides the photo scale
+  here.
 
   Whether the cell px keep their scale has to be measured on the cell map. That is where the px belong: a frame can
   carry camera and subject blur at once.
@@ -1128,9 +1133,10 @@ labels.
   supervision kept).
 - **Whether the cell px of frames keep their scale, and how to calibrate them.** The frame-level px fell during
   training (Update 3, interim), and it follows the label more than the motion; the cell map has not been measured.
-  For steady camera pans the frame equals its cells, and these read almost 0 px up to 16 px of pan per frame: either
-  the films' exposure is short, or the scale does not reach pan blur on frames. An exposure-free check of the pans
-  would decide it. Pinning the frames' boundary to a chosen px would
+  For steady camera pans the frame equals its cells, and these read almost 0 px up to 16 px of pan per frame. An
+  exposure-free check (directional gradient energy, calibrated with the ladder's kernel) found 5–6 px of blur there.
+  The scale does not reach pan blur on frames, and the same holds for Update 1 Small (interim). The same check gives
+  the exposure fraction per film (0.35–0.60), which is the frame-side reference the calibration below needs. Pinning the frames' boundary to a chosen px would
   fix only where the boundary lies, not the scale. The path suggested by the author:
   - if the cell map orders the cells as the measured motion does, and in proportion to it, it can be calibrated;
   - the calibrated map is then learned back as a per-cell length target: the continuous Generation 2. That target
