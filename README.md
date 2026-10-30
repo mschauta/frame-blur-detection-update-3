@@ -280,10 +280,10 @@ The proposed criteria are in the protocol; the decision is the author's. Five ca
 - **One run, three changes:** the coding, the continuous ladder and the dropped masks. If the result improves, the
   causes cannot be separated without the other runs of the 2×2 design (photo coding × ladder shape).
 - **Six held-out films:** the intervals describe the uncertainty over their shots, not over other films.
-- **Flash and strobe light in item 5** (noted by the author at epoch 28). The test series has such scenes, and no
-  training material has them: it has natural, indoor, camera and studio light. The agreement between codecs compares
-  the same frame, so the light is shared. The absolute readings in those scenes fall outside the training data and
-  are reported apart. A flash may also start an I-frame in the source encode, which would enter the I-frame
+- **Flash and strobe light in item 5** (noted by the author at epoch 28). The test series has such scenes, and the
+  training material has them only rarely: it has natural, indoor, camera and studio light, and a few photo-shoot
+  scenes where a flash is seen. The agreement between codecs compares the same frame, so the light is shared. The
+  absolute readings in those scenes are barely covered by the training data and are reported apart. A flash may also start an I-frame in the source encode, which would enter the I-frame
   enrichment.
 
 ## Data availability
