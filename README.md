@@ -114,7 +114,9 @@ Update 3 learns from two kinds of signal, and each sets a different part of the 
 - **The measured length is quantised by the thresholds.** A confident reading counts the thresholds passed, so it
   reads about half a threshold step short, and below 1 px it reads almost 0. On the validation photos at epoch 19,
   true 4.0 px reads 3.4 px (median), true 0–1 px reads 0.15 px, and the top of the ladder reads shorter still: true
-  23.6 px reads 19.8 px (interim).
+  23.6 px reads 19.8 px. That is more than the quantisation explains, and it grew during training (22.2 px at epoch
+  12), while below 8 px the readings moved closer to the truth over the same epochs. The order is kept (pair order
+  ≥ 0.99 above 5 px) (interim).
 
 The class is then chosen when filtering, not in training, in line with the series' principle that 0 px is absolutely
 sharp:

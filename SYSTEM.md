@@ -324,7 +324,8 @@ while not losing more than a fixed margin on the VLM labels:
 - **It is bounded** by the ladder (0–30 px) and by the coding chain it was taught through.
 - **It is quantised by the threshold grid.** A confident L̂ counts the thresholds passed, so it reads about half a
   step short, and below the first threshold it reads almost 0. Update 3 validation photos at epoch 19 (interim):
-  true 4.0 px reads 3.4 px, 0–1 px reads 0.15 px, and the top reads shorter still (23.6 px reads 19.8 px); the pair
+  true 4.0 px reads 3.4 px, 0–1 px reads 0.15 px, and the top reads shorter still (23.6 px reads 19.8 px, against 22.2 px at epoch 12: more than
+  the quantisation explains, while below 8 px the readings moved closer to the truth); the pair
   order of 0 px against 0–1 px photos is 0.72. A px cut is best set on a threshold of the grid.
 - **With frame supervision beside it, the frame boundary gets a px position that nothing pins.** Photos and frames
   meet only in the shared network, and the position moves during training (Section 12.3).
