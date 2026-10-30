@@ -283,8 +283,15 @@ The proposed criteria are in the protocol; the decision is the author's. Five ca
 - **Flash and strobe light in item 5** (noted by the author at epoch 28). The test series has such scenes, and the
   training material has them only rarely: it has natural, indoor, camera and studio light, and a few photo-shoot
   scenes where a flash is seen. The agreement between codecs compares the same frame, so the light is shared. The
-  absolute readings in those scenes are barely covered by the training data and are reported apart. A flash may also start an I-frame in the source encode, which would enter the I-frame
-  enrichment.
+  absolute readings in those scenes are barely covered by the training data and are reported apart.
+  - **A flash starts a keyframe in the source encode.** This was checked on the first minute of the first episode,
+    from an earlier session of Update 1 Base:
+    - 10 of its 25 keyframes fall on a light jump;
+    - Update 1 Base reads every keyframe as sharp, with a light jump (10 of 10) or without one (11 of 12);
+    - a light jump on a P-frame changes nothing (1 of 26 sharp).
+
+    The flash frames read sharp because of the frame type, not the light. The keyframes sit at the same places in
+    every codec, so the P-frame light jumps are the control for item 5.
 
 ## Data availability
 
