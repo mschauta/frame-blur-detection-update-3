@@ -338,6 +338,13 @@ while not losing more than a fixed margin on the VLM labels:
     2.98 to 0.76 by epoch 12 (0.70 at epoch 19), so it can explain only the fall of epochs 0–12. For uniform blur the
     frame equals its cells, and only the scale applies.
 
+  A check against the motion measurement (validation frames, epochs 0–19, predictions recorded first) favours the
+  scale. Over epochs 0–12 the steady camera pans, where the frame equals its cells, lost more px than the
+  subject-motion frames. Inside the `bbb` code the moving area does not change the frame px at moderate motion. The
+  frame px follows the label more than the size of the motion. Steady pans of 4–16 px per frame read at most 0.1 px in
+  the median, and the VLM calls 58% of the pans sharp. Whether they are blurred depends on the unknown exposure
+  fraction.
+
   Whether the cell px keep their scale has to be measured on the cell map. That is where the px belong: a frame can
   carry camera and subject blur at once.
 
@@ -895,7 +902,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
 | transfer from photo-only training to frames | highest at the start, then lost | R4T-1 without mosaic: confident AUC 0.943 after one epoch, falling to 0.862 by epoch 9 as the model specialises on photos |
 | the coded frame type on photos, when GOP-coded photos are taught | within two epochs | Update 3 validation photos: no I versus P/B gap by epoch 2, none at epochs 12 and 19 (0 px: 0.03 against 0.02 px, and 0.04 against 0.04 px; interim) |
 | where the frame boundary falls on the photo length (floating anchor) | it keeps moving | Update 3: the true photo length at which the frame decision flips was 3.0, 2.5, 4.0 px in epochs 0–2, 1.75–2.11 px in epochs 7–12 and 1.04–1.59 px in epochs 13–19; the zero of the offsets b_k fell from 3.21 to 1.11 px (epoch 15) and 0.98 px (epoch 19), by about 0.04 px per epoch at the end (interim) |
-| the frame-level px (floating anchor) | it fell in epochs 0–12, as the photo scale stretched and r fell; since then it varies by epoch | Update 3: median `bbb` frame 7.7 → 5.5 px at epochs 0 / 12, then 3.5–4.8 px in epochs 15–19, while its median logit swung between 3.9 and 7.6 and r went 2.98 → 0.76 → 0.70; the cell px not yet measured (interim) |
+| the frame-level px (floating anchor) | it fell in epochs 0–12, as the photo scale stretched and r fell; since then it varies by epoch | Update 3: median `bbb` frame 7.7 → 5.5 px at epochs 0 / 12, then 3.5–4.8 px in epochs 15–19, while its median logit swung between 3.9 and 7.6 and r went 2.98 → 0.76 → 0.70; the steady camera pans fell most, so the cause is the scale rather than the readout; the cell px not yet measured (interim) |
 | memorising repeated frames | continuously, as long as frames repeat | original runs: training AUC rises to 0.992–0.997 while validation flattens after the third pass |
 | calibration and confidence | never settles | the threshold that maximises balanced accuracy swings from epoch to epoch (Update 1 Small: 0.10–0.89); the NLL drifts up while the ordering improves (original RGB: 0.41 → 0.58); the LSE sharpness r drifts down (Update 1: 4.1 → 0.86) |
 | the last gains | in the learning-rate decay | Update 1 Base: new highs at epochs 21–22 and the best at 29; Update 2: 17.5% of the fit in the last four epochs (Section 12.2) |
@@ -1120,7 +1127,10 @@ labels.
 - **The transfer of a photo-learned px scale to native frames** (R4T-1 failed; Update 3 tests it with frame
   supervision kept).
 - **Whether the cell px of frames keep their scale, and how to calibrate them.** The frame-level px fell during
-  training (Update 3, interim); the cell map has not been measured. Pinning the frames' boundary to a chosen px would
+  training (Update 3, interim), and it follows the label more than the motion; the cell map has not been measured.
+  For steady camera pans the frame equals its cells, and these read almost 0 px up to 16 px of pan per frame: either
+  the films' exposure is short, or the scale does not reach pan blur on frames. An exposure-free check of the pans
+  would decide it. Pinning the frames' boundary to a chosen px would
   fix only where the boundary lies, not the scale. The path suggested by the author:
   - if the cell map orders the cells as the measured motion does, and in proportion to it, it can be calibrated;
   - the calibrated map is then learned back as a per-cell length target: the continuous Generation 2. That target

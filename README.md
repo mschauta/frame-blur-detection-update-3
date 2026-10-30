@@ -143,7 +143,7 @@ was a low point.
 
 In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2.9 px.
 
-- **Two causes are possible, and the frame score cannot separate them:**
+- **Two causes were possible:**
   - **the scale:** the frames' logits grow more slowly than the photo offsets. The median `bbb` logit swings from
     epoch to epoch (3.9 at epoch 0, 7.3 at epoch 12, 4.6 at epoch 15, 7.6 at epoch 19), because noisy binary labels
     do not reward larger values. Meanwhile the photo offsets keep spreading (b at 8 px: 4.2 → 10.9 → 12.9 at epochs
@@ -153,6 +153,22 @@ In epochs 16–19 the `bbb` median was 4.0–4.8 px and the `bsb` median 1.9–2
     0.76 by epoch 12, so for local blur the frame reads ever lower than its blurred cells. Since then r has barely
     moved (0.70 at epoch 19), so this cause can explain only the fall of epochs 0–12. For uniform blur the frame
     score equals the cells', and this cause does not apply.
+- **A check against the motion measurement favours the scale** (validation frames, epochs 0–19, no inference;
+  predictions recorded before the results). The frames were grouped by the measured motion: steady camera pans of at
+  least 4 px per frame with little subject motion, where the frame equals its cells, and a static camera with subject
+  motion. The readout cause predicted that the subject-motion frames would lose more px, and that at equal motion
+  their px would grow with the moving area. Neither held:
+  - over epochs 0–12 the VLM-blurred pans lost more (to 0.57 of their epoch-0 value) than the VLM-blurred
+    subject-motion frames (0.72);
+  - inside the `bbb` code the moving area does not change the frame px at moderate motion. Across codes it does, but
+    through the label: the VLM calls larger moving areas `bbb` more often.
+
+  The frame px follows the label more than the size of the motion.
+- **Steady camera pans read almost 0 px.** The VLM calls 58% of them sharp (`sss`). Up to 16 px of pan per frame the
+  median reads at most 0.1 px, and inside a shot faster pans read only slightly higher (median Spearman 0.20). The px
+  per px of pan is 0.003–0.11 by film. Whether these frames are blurred depends on the exposure fraction, which is
+  unknown. The pans the VLM calls `bbb` read lower than other `bbb` frames (3.9 px, 15% under 1 px, against 3–4%
+  elsewhere): a candidate weak spot for item 6.
 - **One px per frame is the wrong object anyway:** a frame can carry camera blur and subject blur at once. The cell
   map is what has to hold the px. Whether the cell px keep their scale is not yet measured (items 4 and 6).
 - **The share of `bbb` frames under 1 px is partly met by construction.** The frame label trains the same score s
