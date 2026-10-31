@@ -5,12 +5,23 @@ The fourth model of [Frame Blur Detection](https://github.com/mschauta/frame-blu
 [Update 2](https://github.com/mschauta/frame-blur-detection-update-2). The input is unchanged: the signed edge
 fingerprint of the [RGB Mesh Resampling](https://github.com/mschauta/rgb-mesh-resampling) `m09` reconstruction. What
 changes is what the photo anchors teach. The earlier models learned a class from them: sharp or blurred. Update 3
-learns a length: how many pixels of camera blur a frame carries, from 0 to 30 px.
+learns a length from them, 0 to 30 px of camera blur. The result is an ordinal score calibrated on synthetic blur on
+coded photos. On native video, reading it as a physical blur length is not validated.
 
-**Status, 2026-10-30: trained and evaluated.** The run finished, and epoch 29 is the checkpoint fixed in advance.
-Every item of the evaluation registered before the run has been carried out. All three proposed criteria are met.
-Two items came out worse than Update 1 Small: the cell map inside a frame, and the agreement between codecs on film.
-The full report is [experiments/u3r3_gop_ladder/REPORT.md](experiments/u3r3_gop_ladder/REPORT.md).
+**Status, 2026-10-31: trained; the evaluation is partly complete.** The run finished, and epoch 29 is the checkpoint
+fixed in advance. Items 1, 2, 3 and 6 of the evaluation registered before the run were carried out. Two are
+incomplete:
+
+- **Item 4:** the cell-level motion witness was run, but the author's visual inspection of the cell maps was not.
+- **Item 5:** the protocol registers 18 episodes in AVC and HEVC and 12 in AV1. Two were run in AVC and HEVC, and one
+  in AV1, so these results describe two episodes of one series.
+
+All three proposed criteria are met. Two items came out worse than Update 1 Small: the cell map inside a frame, and
+the agreement between encodes on film. The full report is
+[experiments/u3r3_gop_ladder/REPORT.md](experiments/u3r3_gop_ladder/REPORT.md).
+
+The criteria measure a controlled improvement on photos and non-inferiority on frames. They do not show that Update 3
+is better than Update 1 Small overall.
 
 ## Results
 
@@ -23,24 +34,28 @@ The control is Update 1 Small (release v1.1): the same frames, the same start an
 | 3(a). pair order 0–3 px, Update 1 photo ladder | 0.996 | 0.659 | **met** |
 | 3(b). px MAE / Spearman, x264 / x265 / AV1 × I-only / IPB | 1.47–1.52 px / 0.990–0.995 | no px | – |
 | 4. cell map against the measured motion, inside a frame | 0.249 | 0.338 | – (worse) |
-| 5. agreement of one episode's AVC and 10-bit encodes (Spearman) | 0.29–0.40 | 0.60–0.83 | – (worse) |
-| 5. I-frame enrichment when picking the sharpest frame per 5 s, AVC | 23–24× | 69–82× | – |
+| 5. agreement of the AVC and 10-bit encodes of the same frames (Spearman; 2 episodes) | 0.29–0.40 | 0.60–0.83 | – (worse) |
+| 5. I-frame enrichment when picking the sharpest frame per 5 s, AVC (2 episodes) | 23–24× | 69–82× | – |
 | 6. VLM-blurred (`bbb`) frames measured under 1 px, held-out films | 5.6% | no px | (R4T-1: 17–29%) |
 
 - **On photo clips the frame-type bias is gone.** Update 3 reads an I-frame and the P- or B-frames of the same clip
   alike, in all three codecs. Where an I-only coding is worse (lower PSNR), it reads those frames as blurrier: it
   follows the coding quality, not the frame type.
-- **The frame decision is as good as Update 1 Small's,** on the held-out films and on the validation frames (AUC
-  0.9617 against 0.9612).
+- **The frame decision is not inferior by the protocol's margin, and no gain is shown.** On six held-out films the
+  AUC difference is +0.0007 [−0.0017, +0.0028]. Sharp frames kept are level at r90 and r95, and lower at r98: −2.13
+  [−3.13, −1.22] points. On the three test films alone they are also lower at r95: −1.16 [−2.03, −0.42].
 - **The px scale holds on photos** in every codec and structure tested. On native frames the VLM-blurred frames no
   longer read under 1 px (5.6% of `bbb`, against 17–29% for the photo-only R4T-1). Inside one VLM code, the cell
-  readouts order the frames by measured motion as well as Update 1 Small's do.
-- **On film the frame-type bias is reduced, not removed, and a codec bias remains.**
+  readouts order the frames by measured motion as well as Update 1 Small's do. This does not validate the px as a
+  physical length on video: the order of the codes is partly met by construction, steady pans read almost 0 px, and
+  the reading changes with the encode.
+- **On film (two episodes of one series) the frame-type bias is reduced, not removed, and the encode still matters.**
   - On the AVC encodes of the test series the I-frame enrichment falls to a third or less of Update 1 Small's.
   - But Update 3 reads the AVC encode 2.5–3 px blurrier than the 10-bit HEVC and AV1 encodes of the same frames, and
     ranks the frames of the encodes very differently.
-  - Re-encoding the same frames shows that x264 coding of film frames raises the reading step by step with falling
-    quality, by 0.6 px even at 43 dB. x265 10 bit at the same rate raises it less.
+  - In a one-minute re-encoding test, x264 coding of film frames raised the reading step by step with falling
+    quality, by 0.6 px even at 43 dB. x265 10 bit at the same rate raised it less. The test does not separate the
+    codec from the bit depth, and its encodes are second generation (report, item 5).
   - Update 1 Small reacts the same way in logits and crosses its decision boundary, but keeps its ranking better.
   - Between two H.264 releases of 31 corpus films, Update 3 agrees as well as Update 1 Small (Spearman 0.801 against
     0.793).
@@ -189,9 +204,10 @@ sharp:
 transfers to film frames. An earlier photo-only test (R4T-1, not published) learned the scale on photos, but on
 native frames it measured 17–29% of the frames the VLM called clearly blurred (`bbb`) as under 1 px. Update 3 keeps
 the frame supervision beside the photos, and on the held-out films it measures 5.6% of the `bbb` frames under 1 px.
-The px on film still depends on the codec (item 5, above). Film coded with x264 reads higher than the same frames
-in 10-bit HEVC or AV1, and which reading is closer to the true blur is not known. Every training video was H.264
-8 bit, so px values are comparable only within one codec.
+This does not validate the px as a physical length on video. The px also depends on the encode (item 5, above): in
+the two episodes tested, the AVC file reads about 2.6–3 px higher than the same frames in 10-bit HEVC or AV1, and
+which reading is closer to the true blur is not known. Every training video was H.264 8 bit, so compare px only
+within one codec.
 
 **Validation frames, over training:** the measured length of the whole frame, read from the frame score, follows the
 VLM codes. Its values fell in epochs 0–12; since then they have varied from epoch to epoch without a clear trend, and
@@ -303,10 +319,10 @@ decision (evaluation item 2).
   I targets and 0.36 px on P/B targets at epoch 2, and 0.02 against 0.01 px at epoch 29; per codec the two differ by
   at most 0.01 px. This is the training distribution, so it was expected.
 - **On the R4K-2 photo clips,** never trained on, the gap is gone in every rate and motion (item 1).
-- **On film** the I-frame preference fell to a third or less of Update 1 Small's on the AVC encodes. But film frames
-  coded with x264 read blurrier than the same frames coded with x265 or AV1 in 10 bit, for both models (item 5). The
-  photos taught the frame type away; they did not teach the codec away. Every training video is H.264 8 bit, so
-  the frame side has only ever seen H.264-coded film.
+- **On film,** in the two episodes tested, the I-frame preference fell to a third or less of Update 1 Small's on the
+  AVC encodes. But the AVC encodes read blurrier than the same frames in 10-bit HEVC or AV1, for both models (item 5).
+  The photos removed the frame-type gap on photo clips; they did not remove the difference between encodes on film.
+  Every training video is H.264 8 bit, so the frame side has only ever seen H.264-coded film.
 
 ## The run
 
@@ -339,7 +355,8 @@ The [protocol](experiments/u3r3_gop_ladder/PROTOCOL.md) was registered before th
 4. **Cell maps:** visual inspection, and the cell-level motion witness. The visual inspection needs Update 3 in
    FrameBlurStudio and is not done yet.
 5. **One series in three codecs** (AVC, HEVC, AV1): the same frames, agreement of the scores, and the I-frame
-   enrichment when the sharpest frame of a time window is chosen.
+   enrichment when the sharpest frame of a time window is chosen. Registered for 18 episodes (12 in AV1); run on 2
+   (1 in AV1).
 6. **The px scale on native frames:** the order of the VLM codes and the motion.
 
 The proposed criteria are in the protocol; the decision is the author's. Five caveats, recorded before the results:

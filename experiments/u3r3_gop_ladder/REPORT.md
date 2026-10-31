@@ -1,8 +1,9 @@
 # Update 3 report: the GOP-coded continuous ladder, epoch 29
 
 The protocol is [PROTOCOL.md](PROTOCOL.md) (English translation) and [PROTOCOL_hu.md](PROTOCOL_hu.md) (the registered
-text, SHA-256 in [PROTOCOL.sha256](PROTOCOL.sha256)). Every measure of the protocol is reported below. Analyses added
-after the first results are marked **added**, with the result that prompted them.
+text, SHA-256 in [PROTOCOL.sha256](PROTOCOL.sha256)). Every measure of the protocol is reported below, with the two
+deviations listed under the summary. Analyses added after the first results are marked **added**, with the result that
+prompted them.
 
 The control is Update 1 Small (release v1.1, `round3_small_p99_ep029.pt`): the same frames, the same start, the same
 schedule. Both files were scored through the published Update 1 loader (`blurdetect`), bfloat16 autocast, fingerprint
@@ -22,24 +23,27 @@ onwards. The entries written during training are summarised in the README as the
 | 3(a). pair order 0–3 px, Update 1 ladder | 0.996 | 0.659 | **met** |
 | 3(b). px MAE / Spearman, 3 codecs × I-only / IPB × static / pan | 1.47–1.52 px / 0.990–0.995 | (no px) | – |
 | 4. cell map against motion, within the frame | 0.249 | 0.338 | – (worse) |
-| 5. agreement of the AVC and the 10-bit encodes of one episode (Spearman) | 0.29–0.40 | 0.60–0.83 | – (worse) |
-| 5. Phase II I-frame enrichment, AVC, 5 s windows | 23–24× | 69–82× | – |
+| 5. agreement of the AVC and the 10-bit encodes of the same frames (Spearman; 2 episodes) | 0.29–0.40 | 0.60–0.83 | – (worse) |
+| 5. Phase II I-frame enrichment, AVC, 5 s windows (2 episodes) | 23–24× | 69–82× | – |
 | 6. `bbb` frames under 1 px, held-out films | 5.6% | (no px) | R4T-1: 17–29% |
 
 - **On photo clips the frame-type bias is gone.** Update 3 reads an I-frame and the P/B frames of the same clip the
   same, in all three codecs. Where the I-only coding is worse (lower PSNR), it reads the I-only frames as blurrier: it
   follows the coding quality, not the frame type.
-- **The frame decision is as good as Update 1 Small's,** on the held-out films and on the validation frames.
+- **The frame decision is not inferior by the protocol's margin, and no gain is shown.** Sharp frames kept are level
+  at r90 and r95, and lower at r98 (−2.13 [−3.13, −1.22] points; section 3).
 - **The px scale holds on photos** in every codec and structure, and on native frames the blurred VLM codes no longer
   read under 1 px (5.6% of `bbb`). Inside a code, the cell readouts order the frames by measured motion as well as
-  Update 1 Small's.
-- **On film the frame-type bias is reduced, not removed, and a codec bias remains.**
+  Update 1 Small's. This does not validate the px as a physical length on video: the order of the codes is partly
+  met by construction, steady pans read almost 0 px, and the reading changes with the encode.
+- **On film (two episodes of one series) the frame-type bias is reduced, not removed, and the encode still matters.**
   - On the AVC encodes of the test series the I-frame enrichment falls to a third or less of Small's (23–24×
     against 69–82× in 5 s windows).
   - But Update 3 reads the AVC encode 2.5–3 px blurrier than the 10-bit HEVC and AV1 encodes of the same
     frames, and ranks the frames of the two very differently (Spearman 0.29–0.40; Small 0.60–0.83).
-  - Re-encoding the same frames shows the cause: x264 coding of film frames raises the reading in steps with
-    the quality, by 0.6 px even at 43 dB, while x265 10 bit at the same rate raises it less.
+  - In a one-minute re-encoding test, x264 coding of film frames raised the reading in steps with the quality, by
+    0.6 px even at 43 dB, while x265 10 bit at the same rate raised it less. The test does not separate the codec
+    from the bit depth, and its encodes are second generation (section 6).
   - Update 1 Small reacts the same way in logits, and its decision crosses the boundary; it keeps its ranking
     better.
   - On two H.264 releases of 31 corpus films, Update 3 agrees as well as Small (Spearman 0.801 against 0.793).
@@ -48,6 +52,17 @@ onwards. The entries written during training are summarised in the README as the
   (Update 1 Small: 4%), as strict as on the sharp validation frames.
 
 One run, three changes (photo coding, continuous ladder, no masks): no result here can be assigned to one of them.
+
+## Deviations from the protocol
+
+- **Item 5 covers a subset.** The protocol registers 18 episodes in AVC and HEVC and 12 in AV1. Episodes 1 and 2 were
+  run in AVC and HEVC, and episode 2 in AV1.
+  - The episodes were chosen on 2026-10-30, before the item 5 results: episode 1 for its flash scenes, episode 2 as the
+    first in all three codecs.
+  - The full round would take about 21 GPU hours at the measured speed, and it was not run.
+  - The log and the docstring of `eval/yr.py` wrongly call this a choice within the protocol. The protocol fixes the
+    episodes too.
+- **Item 4's visual inspection has not been done.** Only the cell-level witness was run.
 
 ## 1. Run and export
 
@@ -218,13 +233,18 @@ Every frame of episode 1 in AVC and HEVC, and of episode 2 in AVC, HEVC and AV1,
 scored with both models; the whole 1920 × 1080 frame with its bars, as FrameBlurStudio scores. The files of one
 episode align frame by frame (the luma sequences correlate at 0.9999 at zero offset).
 
-| encode | codec, bit depth | bit rate | frames |
+| encode | codec, bit depth | video rate (with audio) | frames |
 |---|---|---|---|
-| episode 1 AVC | H.264 High, 8 bit | 2.59 Mbit/s | 62,674 |
-| episode 1 HEVC | HEVC Main 10 (I and B frames) | 3.13 Mbit/s | 62,674 |
-| episode 2 AVC | H.264 High, 8 bit | 2.73 Mbit/s | 72,968 |
-| episode 2 HEVC | HEVC Main 10 | 2.75 Mbit/s | 72,968 |
-| episode 2 AV1 | AV1 Main, 10 bit | 1.94 Mbit/s | 72,968 |
+| episode 1 AVC | H.264 High, 8 bit | 2.20 Mbit/s (2.59) | 62,674 |
+| episode 1 HEVC | HEVC Main 10 (I and B frames) | 2.48 Mbit/s (3.13) | 62,674 |
+| episode 2 AVC | H.264 High, 8 bit | 2.34 Mbit/s (2.73) | 72,968 |
+| episode 2 HEVC | HEVC Main 10 | 2.30 Mbit/s (2.75) | 72,968 |
+| episode 2 AV1 | AV1 Main, 10 bit, film grain | 1.49 Mbit/s (1.94) | 72,968 |
+
+- The encoders of these files are not known: AVC and HEVC name the format here, not x264 or x265.
+- **The AV1 file carries film-grain synthesis.** `apply_grain` is set in 68,246 of its 72,968 frame headers, and the
+  decoder used here applies it. So its readings are of grained frames, and it cannot show that the bit rate does not
+  matter.
 
 **Phase II I-frame enrichment** (the sharpest frame of each 1 / 5 / 20 s window, ties shared, dark frames excluded,
 against the I-frame share of the windows; 95% interval for 5 s):
@@ -265,36 +285,45 @@ against the I-frame share of the windows; 95% interval for 5 s):
 - On the 10-bit encodes, across Small's deciles 1–9 Update 3 reads 0.05–0.52 px; only the top decile reaches 1.2–2.2
   px. On AVC Update 3 follows Small's order (Spearman 0.87–0.91).
 
-**Added: why the encodes differ.** Two causes were excluded on episode 1:
+**Added: why the encodes differ.** Two explanations were checked on episode 1:
 - **Dither:** the 10 → 8 bit conversion does not dither on this path. The decoded pixels are byte-identical with
   every `sws_dither` setting.
-- **Grain:** the HEVC frames carry no extra grain. Their Laplacian RMS is lower than the AVC frames' (2.03–2.78
-  against 2.24–3.08, three 1 s segments).
+- **Grain in HEVC:** the HEVC frames show no extra grain. Their Laplacian RMS is lower than the AVC frames' (2.03–2.78
+  against 2.24–3.08, three 1 s segments). This does not cover the AV1 file, which has synthesised grain.
 
 Then one minute of episode 2 (1,440 frames) was decoded from HEVC and re-encoded:
 
 | variant | rate | PSNR to the HEVC frames | U3 px | U3 Spearman with the HEVC frames | Small logit | Small Spearman |
 |---|---|---|---|---|---|---|
-| HEVC (reference) | | | 0.62 | 1 | −0.10 | 1 |
+| HEVC (reference) | 3.9 Mbit/s | | 0.62 | 1 | −0.10 | 1 |
 | 8-bit 4:2:0 lossless (FFV1, x264 qp 0) | 102–105 Mbit/s | 44.6 dB | 0.66 | 0.875 | −0.03 | 0.976 |
 | 10-bit 4:2:0 lossless (FFV1) | 194 Mbit/s | 42.5 dB | 0.67 | 0.867 | −0.22 | 0.976 |
 | x264 CRF 12 | 19.5 Mbit/s | 43.0 dB | 1.20 | 0.733 | +2.19 | 0.877 |
 | x264 CRF 18 | 8.4 Mbit/s | 41.7 dB | 2.18 | 0.558 | +2.63 | 0.842 |
 | x264 2.7 Mbit/s | 2.5 Mbit/s | 39.4 dB | 3.04 | 0.193 | +3.36 | 0.714 |
 | x265 10 bit 2.7 Mbit/s | 2.5 Mbit/s | 39.2 dB | 1.72 | 0.797 | +0.41 | 0.873 |
-| the AVC file (stored scores) | 2.7 Mbit/s | | 3.26 | 0.255 | +3.82 | 0.782 |
+| the AVC file (stored scores) | 4.5 Mbit/s | | 3.26 | 0.255 | +3.82 | 0.782 |
 
-(x264 preset slow, keyint 240, 3 B-frames; x265 preset medium, keyint 240.)
+(x264 preset slow, keyint 240, 3 B-frames; x265 preset medium, keyint 240. The rates are those of this minute.)
 
-- **x264 coding reproduces the AVC file's reading.** The same pixels through x264 at 2.7 Mbit/s read 3.04 px, with
-  Spearman 0.19. The AVC file reads 3.26 px, with 0.26.
+**How far this test goes:**
+- It is one minute of one episode, and not a typical minute. The AVC and HEVC files spend 1.9 and 1.7 times their average
+  rate on it, and Update 3 reads them at 3.26 and 0.62 px, against 2.77 and 0.19 px over the episode.
+- The re-encodes are second generation: their input is the HEVC file decoded to 8-bit RGB. The AVC file was coded once,
+  by an unknown encoder.
+- x264 ran in 8 bit and x265 in 10 bit, so the codec and the bit depth are not separated.
+- Both 2.7 Mbit/s runs got less than the reference's 3.9 Mbit/s, so part of x265's rise may be the lower rate.
+
+**What it shows within these limits:**
+- **x264 coding comes close to the AVC file's reading.** The same pixels through x264 at 2.5 Mbit/s read 3.04 px, with
+  Spearman 0.19. The AVC file, at 4.5 Mbit/s, reads 3.26 px, with 0.26.
 - **The effect grows step by step as the quality falls,** and is there even at 43 dB (+0.6 px). The 4:2:0 / 8-bit
   conversion alone does nothing.
 - **Update 1 Small reacts the same way,** by as much or more in logits (CRF 12: −0.10 → +2.19, across the decision
   boundary). It keeps its ranking better.
-- **So on film both models read x264 coding as blur,** even near transparency; x265 10 bit much less.
-  - This is the x264 coding as a whole, not the frame type.
-  - Every video of the training corpus is H.264, so the frame labels were all learned on H.264 frames.
+- **In this test both models read x264 coding of film frames as blur,** even at 43 dB, and x265 10 bit much less.
+  - The effect spans the whole coding, not the frame type alone.
+  - Every video of the training corpus is H.264 8 bit, so the frame labels were all learned on such frames.
 - **What is Update 3's own:**
   - its px scale makes the effect visible (0.6 → 1.2–3.0 px);
   - its ranking is more sensitive to small changes (lossless round trip: 0.875 against 0.976). On the 10-bit encodes
@@ -304,7 +333,7 @@ Then one minute of episode 2 (1,440 frames) was decoded from HEVC and re-encoded
 
 **Added: two H.264 releases of the same film** (`eval/two_releases.py`; the Update 1 README's consistency check).
 - 31 corpus films, both releases H.264 8 bit, 1920 × 1080. Most of these films are in the training split.
-- The lower release runs at 4.8–10.0 Mbit/s (median 6.6), the higher at 7.5–12.4 (median 9.3).
+- The lower release runs at 4.8–10.0 Mbit/s (median 6.6), the higher at 7.5–12.4 (median 9.3), audio included.
 - 400 time-matched pairs per film, 12,400 in all.
 
 | | Update 3 | Small | U3 − Small (median over films; bootstrap over films) | U3 higher |
@@ -317,7 +346,9 @@ Then one minute of episode 2 (1,440 frames) was decoded from HEVC and re-encoded
 - **Between two good H.264 releases Update 3 is as stable as Small,** with no level difference (0.018 against
   0.015 px).
 - Small reproduces the Update 1 Base corpus figure (85.0%, κ 0.68).
-- **So the test series' difference is not a general instability.** It is the AVC encode against the 10-bit ones.
+- **So the test series' difference is not a general instability between encodes.** In the two episodes tested it is the
+  AVC encode against the 10-bit ones. These releases run well above the series' rate and are all H.264, so they do
+  not test low-rate H.264 or other codecs.
 
 ## 7. Item 6: px on native frames
 
@@ -353,5 +384,6 @@ Then one minute of episode 2 (1,440 frames) was decoded from HEVC and re-encoded
 
 ## 8. Not done
 
-- The author's visual inspection of the cell maps (item 4): Update 3 is not yet in FrameBlurStudio.
+- The author's visual inspection of the cell maps (item 4). Update 3 is now in FrameBlurStudio, so it can be done.
+- The other 16 episodes in AVC and HEVC and the other 11 in AV1 (item 5).
 - The 2×2 design's other runs, so the three changes stay confounded.
