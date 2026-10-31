@@ -42,8 +42,9 @@ onwards. The entries written during training are summarised in the README as the
   - But Update 3 reads the AVC encode 2.5–3 px blurrier than the 10-bit HEVC and AV1 encodes of the same
     frames, and ranks the frames of the two very differently (Spearman 0.29–0.40; Small 0.60–0.83).
   - In a one-minute re-encoding test, x264 coding of film frames raised the reading in steps with the quality, by
-    0.6 px even at 43 dB, while x265 10 bit at the same rate raised it less. The test does not separate the codec
-    from the bit depth, and its encodes are second generation (section 6).
+    0.6 px even at 43 dB, while x265 at the same rate raised it less. A follow-up 2 × 2 test points to the codec for
+    Update 1 Small. For Update 3 it does not separate the codec from the bit depth. The encodes are second generation,
+    from an HEVC source (section 6).
   - Update 1 Small reacts the same way in logits, and its decision crosses the boundary; it keeps its ranking
     better.
   - On two H.264 releases of 31 corpus films, Update 3 agrees as well as Small (Spearman 0.801 against 0.793).
@@ -311,7 +312,8 @@ Then one minute of episode 2 (1,440 frames) was decoded from HEVC and re-encoded
   rate on it, and Update 3 reads them at 3.26 and 0.62 px, against 2.77 and 0.19 px over the episode.
 - The re-encodes are second generation: their input is the HEVC file decoded to 8-bit RGB. The AVC file was coded once,
   by an unknown encoder.
-- x264 ran in 8 bit and x265 in 10 bit, so the codec and the bit depth are not separated.
+- x264 ran in 8 bit and x265 in 10 bit, so this table does not separate the codec from the bit depth (see the 2 × 2 test
+  below).
 - Both 2.7 Mbit/s runs got less than the reference's 3.9 Mbit/s, so part of x265's rise may be the lower rate.
 
 **What it shows within these limits:**
@@ -330,6 +332,61 @@ Then one minute of episode 2 (1,440 frames) was decoded from HEVC and re-encoded
     most frames fall into its unresolved band under 1 px, where the order is noisy.
 - On the photo clips (item 3(b)) x264 CRF 23 left a 0 px photo at 0.01 px. On film the same coding adds 1–2 px. Why
   is open; the removal of grain is a suspicion, not a measurement.
+
+**Added: codec against bit depth** (`eval/yr_depth.py`; the decision rule was recorded in the log before the run). The
+same minute in a 2 × 2 design, with the encoder settings above.
+
+| variant | rate | PSNR to the HEVC frames | U3 px | U3 logit | U3 Spearman with the HEVC frames | Small logit | Small Spearman |
+|---|---|---|---|---|---|---|---|
+| HEVC (reference) | 3.9 Mbit/s | | 0.62 | −0.31 | 1 | −0.10 | 1 |
+| x264 8 bit | 2.5 Mbit/s | 39.39 dB | 3.06 | +4.75 | 0.188 | +3.46 | 0.717 |
+| x264 10 bit | 2.5 Mbit/s | 38.65 dB | 2.49 | +3.64 | 0.289 | +4.12 | 0.703 |
+| x265 8 bit | 2.5 Mbit/s | 40.23 dB | 1.96 | +2.62 | 0.669 | +1.69 | 0.817 |
+| x265 10 bit | 2.5 Mbit/s | 39.24 dB | 1.73 | +2.16 | 0.790 | +0.44 | 0.874 |
+
+The two repeated variants match the first pass (U3 3.06 against 3.04 px and 1.73 against 1.72 px; Small +3.46 against
++3.36 and +0.44 against +0.41).
+
+The registered measures, as paired per-frame medians with a block bootstrap over 2 s blocks. The rule calls it "codec"
+if |codec| ≥ 2 |depth| and the codec interval excludes 0, "depth" the other way round, and otherwise "not separated".
+
+| | U3 logit | U3 px | Small logit |
+|---|---|---|---|
+| codec (x264 − x265) | +0.76 [−0.17, +1.51] | +0.25 [−0.00, +0.61] | +1.88 [+1.55, +2.39] |
+| bit depth (8 − 10 bit) | +0.49 [+0.18, +0.82] | +0.21 [+0.06, +0.38] | +0.02 [−0.13, +0.19] |
+| interaction | +0.13 [−0.37, +0.70] | +0.06 [−0.08, +0.32] | −1.01 [−1.22, −0.80] |
+| **decision by the rule** | **not separated** | | **codec** |
+
+Worked out after the decision, as a description ([data/yr_depth_simple.json](data/yr_depth_simple.json)):
+
+| | U3 logit | U3 px | Small logit |
+|---|---|---|---|
+| 8 − 10 bit, in x264 | +0.51 [+0.16, +0.99] | +0.22 [+0.05, +0.41] | −0.50 [−0.65, −0.27] |
+| 8 − 10 bit, in x265 | +0.38 [+0.25, +0.58] | +0.10 [+0.05, +0.22] | +0.47 [+0.34, +0.64] |
+| x264 − x265, in 8 bit | +1.05 [−0.06, +1.88] | +0.34 [−0.01, +0.80] | +1.33 [+1.04, +1.74] |
+| x264 − x265, in 10 bit | +0.54 [−0.23, +1.31] | +0.13 [−0.05, +0.45] | +2.35 [+1.99, +2.91] |
+| x264 8 bit − reference | +3.29 [+1.26, +4.93] | +1.29 [+0.32, +2.36] | +2.28 [+1.77, +2.80] |
+| x264 10 bit − reference | +1.88 [+0.79, +3.13] | +0.64 [+0.16, +1.36] | +2.75 [+2.08, +3.82] |
+| x265 8 bit − reference | +1.31 [+0.94, +2.09] | +0.43 [+0.18, +0.96] | +0.63 [+0.33, +1.00] |
+| x265 10 bit − reference | +0.94 [+0.66, +1.42] | +0.28 [+0.12, +0.60] | +0.15 [−0.13, +0.44] |
+
+- **Update 3: the rule does not decide.** Both effects point the same way, x264 above x265 and 8 bit above 10 bit.
+  - The bit-depth effect is small, but its interval excludes 0 in both codecs. It runs against PSNR: at the same rate the
+    8-bit encodes are 0.7–1.0 dB better.
+  - The codec effect has the larger point value, but it varies strongly inside the minute and its interval crosses 0.
+- **Update 1 Small: the codec, by the rule.** Its near-zero bit-depth effect hides opposite signs (x264 −0.50, x265
+  +0.47), so it does not show that bit depth has no effect. x265 10 bit does not differ from the reference.
+- **Every re-encode raises Update 3's reading against the reference** (+0.94 to +3.29 logit), with point values above
+  either effect.
+- **The medians in the first table can mislead.** x264 and x265 in 8 bit differ by 1.1 px in their medians but by 0.34 px in
+  the paired median, because the frames respond very unevenly.
+- **Limits:**
+  - one minute, not a typical one, and second-generation encodes;
+  - the input is 8-bit RGB, so 10 bit here is the encoder's precision, not a 10-bit source as in the real files;
+  - the source is HEVC, so x265 re-codes the pixels with tools related to the source's, which may favour it (not tested;
+    noticed after the results).
+
+  So this does not explain the difference between the AVC and the 10-bit files.
 
 **Added: two H.264 releases of the same film** (`eval/two_releases.py`; the Update 1 README's consistency check).
 - 31 corpus films, both releases H.264 8 bit, 1920 × 1080. Most of these films are in the training split.

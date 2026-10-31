@@ -1,0 +1,151 @@
+{
+ "what": "Added to item 5 (napl\u00f3 2026-10-31): does the re-encoding effect belong to the codec or to the bit depth?",
+ "minute_s": [
+  600.0,
+  660.0
+ ],
+ "frames": 1440,
+ "reference": {
+  "u3_px_median": 0.6212661914598772,
+  "small_logit_median": -0.10010882467031479
+ },
+ "variants": {
+  "x264_8": {
+   "stream": "h264,High,yuv420p",
+   "kbit_s": 2519.5536,
+   "psnr_to_reference_db": 39.392822265625,
+   "u3_px_median": 3.061142902863727,
+   "u3_logit_median": 4.754640102386475,
+   "small_logit_median": 3.4597935676574707,
+   "u3_spearman_with_reference": 0.18752423925744563,
+   "small_spearman_with_reference": 0.7166355452524812
+  },
+  "x264_10": {
+   "stream": "h264,High 10,yuv420p10le",
+   "kbit_s": 2510.6533333333336,
+   "psnr_to_reference_db": 38.649330139160156,
+   "u3_px_median": 2.486025433738874,
+   "u3_logit_median": 3.6357789039611816,
+   "small_logit_median": 4.117434501647949,
+   "u3_spearman_with_reference": 0.28872395289542485,
+   "small_spearman_with_reference": 0.7029373286091798
+  },
+  "x265_8": {
+   "stream": "hevc,Main,yuv420p",
+   "kbit_s": 2480.156,
+   "psnr_to_reference_db": 40.226470947265625,
+   "u3_px_median": 1.9599472384763814,
+   "u3_logit_median": 2.617767333984375,
+   "small_logit_median": 1.687872052192688,
+   "u3_spearman_with_reference": 0.6685271195957687,
+   "small_spearman_with_reference": 0.8174730866479005
+  },
+  "x265_10": {
+   "stream": "hevc,Main 10,yuv420p10le",
+   "kbit_s": 2486.4241333333334,
+   "psnr_to_reference_db": 39.241859436035156,
+   "u3_px_median": 1.7276964390768188,
+   "u3_logit_median": 2.1625912189483643,
+   "small_logit_median": 0.44172239303588867,
+   "u3_spearman_with_reference": 0.7901398888277497,
+   "small_spearman_with_reference": 0.8743454335513601
+  }
+ },
+ "effects": {
+  "u3_logit": {
+   "codec": {
+    "median": 0.7646056562662125,
+    "ci95": [
+     -0.17344074128195644,
+     1.5146149729378517
+    ]
+   },
+   "depth": {
+    "median": 0.48763518035411835,
+    "ci95": [
+     0.175795316696167,
+     0.8203716874122617
+    ]
+   },
+   "interaction": {
+    "median": 0.13114655017852783,
+    "ci95": [
+     -0.36889755427837373,
+     0.7006734214723109
+    ]
+   }
+  },
+  "u3_px": {
+   "codec": {
+    "median": 0.2503590728503811,
+    "ci95": [
+     -0.002925165713279668,
+     0.6096857479517018
+    ]
+   },
+   "depth": {
+    "median": 0.20680001285090852,
+    "ci95": [
+     0.05595079398100537,
+     0.37810912267179003
+    ]
+   },
+   "interaction": {
+    "median": 0.05601825865584141,
+    "ci95": [
+     -0.08141958482541528,
+     0.3160207440387803
+    ]
+   }
+  },
+  "small_logit": {
+   "codec": {
+    "median": 1.8847127556800842,
+    "ci95": [
+     1.5494183249771596,
+     2.3896834656596178
+    ]
+   },
+   "depth": {
+    "median": 0.023485243320465088,
+    "ci95": [
+     -0.13067749962210656,
+     0.19339829385280605
+    ]
+   },
+   "interaction": {
+    "median": -1.0081284195184708,
+    "ci95": [
+     -1.2236865520477296,
+     -0.797890841960907
+    ]
+   }
+  }
+ },
+ "verdict_by_decision_rule": {
+  "u3": "not separated",
+  "small": "codec"
+ },
+ "control_first_pass": {
+  "x264_8": {
+   "first_pass": {
+    "u3_px": 3.04,
+    "small_logit": 3.36
+   },
+   "now": {
+    "u3_px": 3.061142902863727,
+    "small_logit": 3.4597935676574707
+   }
+  },
+  "x265_10": {
+   "first_pass": {
+    "u3_px": 1.72,
+    "small_logit": 0.41
+   },
+   "now": {
+    "u3_px": 1.7276964390768188,
+    "small_logit": 0.44172239303588867
+   }
+  }
+ }
+}

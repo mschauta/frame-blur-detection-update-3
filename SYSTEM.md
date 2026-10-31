@@ -1198,7 +1198,8 @@ labels.
   - **The price:** the motion witness used for calibration is no longer independent (Section 2.3).
 - **The codec on the frame side.** GOP-coded anchors removed the frame-type bias on photos and reduced it on film.
   But AVC encodes still read blurrier than 10-bit HEVC or AV1 on the same film frames (Update 3, item 5; two episodes).
-  A one-minute re-encoding test points to the coding, but does not separate x264 from 8-bit coding. Every training
+  A one-minute 2 × 2 re-encoding test points to the codec for Update 1 Small, and does not separate the codec from the
+  bit depth for Update 3; its encodes are second generation, from an HEVC source. Every training
   frame is H.264. Frames from other codecs, or the same film in several codecs, would be the next lever. Why x264
   coding raises the reading on film frames and not on photo clips is open.
 - **Darkness:** input effect or real blur.

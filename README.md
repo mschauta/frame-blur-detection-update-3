@@ -54,8 +54,9 @@ The control is Update 1 Small (release v1.1): the same frames, the same start an
   - But Update 3 reads the AVC encode 2.5–3 px blurrier than the 10-bit HEVC and AV1 encodes of the same frames, and
     ranks the frames of the encodes very differently.
   - In a one-minute re-encoding test, x264 coding of film frames raised the reading step by step with falling
-    quality, by 0.6 px even at 43 dB. x265 10 bit at the same rate raised it less. The test does not separate the
-    codec from the bit depth, and its encodes are second generation (report, item 5).
+    quality, by 0.6 px even at 43 dB. x265 at the same rate raised it less. A follow-up 2 × 2 test points to the codec
+    for Update 1 Small. For Update 3 it does not separate the codec from the bit depth. The encodes are second
+    generation, from an HEVC source (report, item 5).
   - Update 1 Small reacts the same way in logits and crosses its decision boundary, but keeps its ranking better.
   - Between two H.264 releases of 31 corpus films, Update 3 agrees as well as Update 1 Small (Spearman 0.801 against
     0.793).

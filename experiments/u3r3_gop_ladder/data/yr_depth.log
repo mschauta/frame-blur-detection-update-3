@@ -1,0 +1,11 @@
+[03:01:47] referencia: 1440 frame
+[03:09:45] x264_8 (h264,High,yuv420p): 2520 kbit/s, PSNR 39.39 dB | U3 3.06 px, logit +4.75, Spearman 0.188 | Small logit +3.46, Spearman 0.717
+[03:16:55] x264_10 (h264,High 10,yuv420p10le): 2511 kbit/s, PSNR 38.65 dB | U3 2.49 px, logit +3.64, Spearman 0.289 | Small logit +4.12, Spearman 0.703
+[03:24:19] x265_8 (hevc,Main,yuv420p): 2480 kbit/s, PSNR 40.23 dB | U3 1.96 px, logit +2.62, Spearman 0.669 | Small logit +1.69, Spearman 0.817
+[03:31:50] x265_10 (hevc,Main 10,yuv420p10le): 2486 kbit/s, PSNR 39.24 dB | U3 1.73 px, logit +2.16, Spearman 0.790 | Small logit +0.44, Spearman 0.874
+[03:31:51] referencia: U3 0.62 px, Small logit -0.10
+[03:31:51] u3_logit: codec +0.765 [-0.173, 1.515]; depth +0.488 [0.176, 0.82]; interaction +0.131 [-0.369, 0.701]
+[03:31:51] u3_px: codec +0.250 [-0.003, 0.61]; depth +0.207 [0.056, 0.378]; interaction +0.056 [-0.081, 0.316]
+[03:31:51] small_logit: codec +1.885 [1.549, 2.39]; depth +0.023 [-0.131, 0.193]; interaction -1.008 [-1.224, -0.798]
+[03:31:51] döntés a rögzített szabállyal: {'u3': 'not separated', 'small': 'codec'}
+[03:31:51] kontroll az első menethez: {'x264_8': {'first_pass': {'u3_px': 3.04, 'small_logit': 3.36}, 'now': {'u3_px': 3.061142902863727, 'small_logit': 3.4597935676574707}}, 'x265_10': {'first_pass': {'u3_px': 1.72, 'small_logit': 0.41}, 'now': {'u3_px': 1.7276964390768188, 'small_logit': 0.44172239303588867}}}
