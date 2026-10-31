@@ -38,7 +38,7 @@ onwards. The entries written during training are summarised in the README as the
   read under 1 px (5.6% of `bbb`). Inside a code, the cell readouts order the frames by measured motion as well as
   Update 1 Small's. This does not validate the px as a physical length on video: the order of the codes is partly
   met by construction, steady pans read almost 0 px, and the reading changes with the encode.
-- **On film (18 episodes of one series) the frame-type bias is reduced, not removed, and the encode still matters.**
+- **On film (18 episodes of one series, Young Royals) the frame-type bias is reduced, not removed, and the encode still matters.**
   - **The I-frame preference.** On the AVC files, which are x264 at CRF 16–17, the share called sharp at r95 is nearly
     level across the frame types: I 25%, P 19%, B 23% (Small: I 84%, P 22%, B 28%). When picking the sharpest frame
     per 5 s the I-frame enrichment falls to about a quarter of Small's (15.8× against 69.6×), and is still large.
@@ -242,9 +242,12 @@ cells; the within-frame Spearman between the cell map and the measured motion, m
 ## 6. Item 5: one series in several codecs
 
 Every frame of the 18 episodes in AVC and HEVC and of the 12 in AV1, as registered: 48 files, 3,207,491 frames of the
-test series (not named), scored with both models; the whole 1920 × 1080 frame with its bars, as FrameBlurStudio scores.
+test series, Young Royals, scored with both models; the whole 1920 × 1080 frame with its bars, as FrameBlurStudio scores.
 
-- **The episodes are numbered 1–18 in order.** AV1 exists for all but episodes 1 and 13–17.
+- **It is test material only.** None of the 177 videos of the training corpus matches it by name or by length within
+  2 s, and none matches the 18 AVC files by SHA-256 ([data/yr_not_in_corpus.json](data/yr_not_in_corpus.json)).
+- **The episodes are numbered 1–18 in order:** 1–6 are season 1, 7–12 season 2 and 13–18 season 3. AV1 exists for all but
+  episodes 1 and 13–17.
 - **The files of one episode align frame by frame.** In all 42 codec pairs the luma sequences correlate best at zero
   offset, at 0.9999 or more.
 - **The unit is the episode.** The intervals are bootstraps over the episodes (2000 resamples, seed 20261030). All of it

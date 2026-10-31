@@ -647,7 +647,7 @@ exists to make one coding property the same on photos and frames, so that the mo
    - **Its result, on photo clips:** the gap is gone in all three codecs.
      - R4K-2: P/B − I-only is +0.00 logit, against +13.2 for Update 1 Small (CRF 23, pan).
      - GOP ladder: a clip's I- and P/B frames differ by at most 0.015 px.
-   - **Its result, on film (18 episodes of one series):** the I-frame preference fell to about a quarter of Update 1
+   - **Its result, on film (18 episodes of one series, Young Royals):** the I-frame preference fell to about a quarter of Update 1
      Small's. But the AVC encodes read blurrier than the same frames in 10-bit HEVC or AV1, for both models (Section
      17).
 4. **The rest of the chain:** BT.709, TV range, 4:2:0, as in the frames. The CRF varies:

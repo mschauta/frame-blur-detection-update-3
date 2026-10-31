@@ -3,10 +3,9 @@
 English translation of the registered protocol, [PROTOCOL_hu.md](PROTOCOL_hu.md). The Hungarian text was fixed on
 2026-10-29, before the run started. Where the two differ, the Hungarian text governs.
 
-**One redaction.** The registered text names a TV series used as test material in two places (evaluation items 4 and
-5). Both copies here replace the name with a placeholder. The registered SHA-256 is of the unredacted text, so it
-cannot be checked against `PROTOCOL_hu.md`; [PROTOCOL.sha256](PROTOCOL.sha256) records both hashes, and the placeholder
-is the only difference.
+**The name of the test series.** The registered text names a TV series used as test material in two places (evaluation
+items 4 and 5). Until 2026-11-01 the copies here replaced the name with a placeholder. Both now carry the registered
+wording, so `PROTOCOL_hu.md` matches the registered SHA-256 in [PROTOCOL.sha256](PROTOCOL.sha256).
 
 **Names.** File names refer to the training code as run; that code is not published. "round3" is the internal name of
 the Update 1 recipe: round3 Base is Update 1 (release v1.0), round3 Small is Update 1 Small (release v1.1), and v9 is
@@ -120,9 +119,9 @@ also holds the ordinal thresholds (for the px estimate).
    - (b) The same in GOP, x264 / x265 / AV1, with I-only and IPB structure only: the deviation of the measured px
      from the true L (MAE, Spearman) per codec and per frame type.
 4. **Cell maps.**
-   - The author's visual inspection on known films (e.g. [series and episode, name withheld]).
+   - The author's visual inspection on known films (e.g. Young Royals S01E01).
    - The cell-level motion-measurement witness on the validation frames (the method of R4T-1 9.6).
-5. **[series, name withheld] codec benchmark.**
+5. **Young Royals codec benchmark.**
    - The same frame in the AVC and HEVC SDR versions (18 episodes), and in AV1 SDR (12 episodes): agreement of the
      scores, decision changes, the I-frame enrichment of Phase II.
    - Between the new model and round3 Small. In FrameBlurStudio or by script.

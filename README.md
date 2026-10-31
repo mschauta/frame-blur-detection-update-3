@@ -49,7 +49,7 @@ The control is Update 1 Small (release v1.1): the same frames, the same start an
   readouts order the frames by measured motion as well as Update 1 Small's do. This does not validate the px as a
   physical length on video: the order of the codes is partly met by construction, steady pans read almost 0 px, and
   the reading changes with the encode.
-- **On film (18 episodes of one series) the frame-type bias is reduced, not removed, and the encode still matters.**
+- **On film (18 episodes of one series, Young Royals) the frame-type bias is reduced, not removed, and the encode still matters.**
   - On the AVC files (x264, CRF 16–17) the share called sharp at r95 is nearly level across frame types: I 25%, P 19%,
     B 23% (Update 1 Small: I 84%, P 22%, B 28%). The I-frame enrichment falls to about a quarter of Update 1 Small's, and is still large.
   - In all 18 episodes both models read the AVC file blurrier than the HEVC file of the same frames: by +2.78 logits for
@@ -379,7 +379,7 @@ The proposed criteria are in the protocol; the decision is the author's. Five ca
 - **One run, three changes:** the coding, the continuous ladder and the dropped masks. The causes cannot be separated
   without the other runs of the 2×2 design (photo coding × ladder shape).
 - **Six held-out films:** the intervals describe the uncertainty over their shots, not over other films.
-- **Flash and strobe light in item 5** (noted by the author at epoch 28). The test series has such scenes, and the
+- **Flash and strobe light in item 5** (noted by the author at epoch 28). The test series, Young Royals, has such scenes, and the
   training material has them only rarely: it has natural, indoor, camera and studio light, and a few photo-shoot
   scenes where a flash is seen. The agreement between codecs compares the same frame, so the light is shared. The
   absolute readings in those scenes are barely covered by the training data and are reported apart.
@@ -404,7 +404,8 @@ photographs. No images, frames, crops or derived images from it are published. P
 - the protocol;
 - the aggregate evidence.
 
-The test series is not named.
+The test series, Young Royals, is named because it is test material only: none of the 177 videos of the training corpus
+matches it by name, length or SHA-256 (report, item 5). The training films and photo albums stay unnamed.
 
 ## Related work by the author
 

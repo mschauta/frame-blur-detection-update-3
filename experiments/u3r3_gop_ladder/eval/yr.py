@@ -1,4 +1,4 @@
-"""Protocol item 5: one series in several codecs (the test series is not named in anything published).
+"""Protocol item 5: one series in several codecs (Young Royals; test material, not in the training corpus).
 
 Scope: the protocol registers all 18 episodes in AVC and HEVC SDR and the 12 in AV1 SDR. The first round (2026-10-30)
 ran S01E01 in AVC and HEVC SDR (the R4K-1 video A, with the flash and strobe scenes of napló 13:05) and S01E02 in AVC,

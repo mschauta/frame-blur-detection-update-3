@@ -107,9 +107,9 @@ meta tartalmazza a sorrendi küszöböket is (px-becsléshez).
    - (b) Ugyanez GOP-ban, x264 / x265 / AV1, csak I és IPB szerkezettel: a mért px és a valódi L eltérése (MAE,
      Spearman) kodekenként és frame-típusonként.
 4. **Cellatérképek.**
-   - A felhasználó szemrevételezése ismert filmeken (pl. [sorozat és epizód, a név visszatartva]).
+   - A felhasználó szemrevételezése ismert filmeken (pl. Young Royals S01E01).
    - A cellaszintű mozgásmérés-tanú a validációs frame-eken (az R4T-1 9.6 módszere).
-5. **[sorozat, a név visszatartva] kodekmérce.**
+5. **Young Royals kodekmérce.**
    - Ugyanaz a frame AVC és HEVC SDR változatban (18 epizód), illetve az AV1 SDR (12 epizód): a pontszámok egyezése,
      a döntésváltások, a II. fázis I-frame-dúsulása.
    - Az új modell és a round3 Small között. A FrameBlurStudióban vagy szkripttel.
