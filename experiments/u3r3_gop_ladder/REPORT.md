@@ -23,8 +23,10 @@ onwards. The entries written during training are summarised in the README as the
 | 3(a). pair order 0–3 px, Update 1 ladder | 0.996 | 0.659 | **met** |
 | 3(b). px MAE / Spearman, 3 codecs × I-only / IPB × static / pan | 1.47–1.52 px / 0.990–0.995 | (no px) | – |
 | 4. cell map against motion, within the frame | 0.249 | 0.338 | – (worse) |
-| 5. agreement of the AVC and the 10-bit encodes of the same frames (Spearman; 2 episodes) | 0.29–0.40 | 0.60–0.83 | – (worse) |
-| 5. Phase II I-frame enrichment, AVC, 5 s windows (2 episodes) | 23–24× | 69–82× | – |
+| 5. agreement of the AVC and the HEVC encodes of the same frames (Spearman; 18 episodes, median and range) | 0.429 (0.290–0.569) | 0.862 (0.778–0.902) | – (worse) |
+| 5. r95 decisions that change between the AVC and the HEVC encode (18 episodes) | 29.7% (22.8–42.3) | 20.6% (16.3–24.0) | – (worse) |
+| 5. agreement of the HEVC and the AV1 encodes (Spearman; 12 episodes) | 0.752 (0.633–0.841) | 0.650 (0.577–0.913) | – (better) |
+| 5. Phase II I-frame enrichment, AVC, 5 s windows (18 episodes) | 15.8× (10.7–25.4) | 69.6× (56.7–81.9) | – |
 | 6. `bbb` frames under 1 px, held-out films | 5.6% | (no px) | R4T-1: 17–29% |
 
 - **On photo clips the frame-type bias is gone.** Update 3 reads an I-frame and the P/B frames of the same clip the
@@ -36,11 +38,20 @@ onwards. The entries written during training are summarised in the README as the
   read under 1 px (5.6% of `bbb`). Inside a code, the cell readouts order the frames by measured motion as well as
   Update 1 Small's. This does not validate the px as a physical length on video: the order of the codes is partly
   met by construction, steady pans read almost 0 px, and the reading changes with the encode.
-- **On film (two episodes of one series) the frame-type bias is reduced, not removed, and the encode still matters.**
-  - On the AVC encodes of the test series the I-frame enrichment falls to a third or less of Small's (23–24×
-    against 69–82× in 5 s windows).
-  - But Update 3 reads the AVC encode 2.5–3 px blurrier than the 10-bit HEVC and AV1 encodes of the same
-    frames, and ranks the frames of the two very differently (Spearman 0.29–0.40; Small 0.60–0.83).
+- **On film (18 episodes of one series) the frame-type bias is reduced, not removed, and the encode still matters.**
+  - **The I-frame preference.** On the AVC files, which are x264 at CRF 16–17, the share called sharp at r95 is nearly
+    level across the frame types: I 25%, P 19%, B 23% (Small: I 84%, P 22%, B 28%). When picking the sharpest frame
+    per 5 s the I-frame enrichment falls to about a quarter of Small's (15.8× against 69.6×), and is still large.
+  - **AVC against HEVC.** In all 18 episodes both models read the AVC file blurrier: by +2.78 logits for Update 3 (+1.00
+    to +5.57) and +1.81 for Small (+1.50 to +2.17). Update 3 ranks the frames of the two much less alike (Spearman 0.429
+    against 0.862) and changes more r95 decisions (29.7% against 20.6%).
+  - **HEVC against AV1 Update 3 is the steadier** (Spearman 0.752 against 0.650; decisions 17.1% against 27.0%). One AV1
+    file without film grain suggests that grain, not the codec, lowers Small's agreement there.
+  - **The px depend on the file, not only the codec.** Update 3's median on AVC ranges from 0.21 to 3.15 px over the
+    episodes (HEVC 0.03–0.23). Episodes 13–17 and 18 read 0.21–0.44 and 2.28 px, with the same HEVC reading and the same
+    x264 settings apart from the CRF. The cause is not established.
+  - **The two episodes of the first round were not typical,** by a rule recorded before the full round. The direction
+    holds, but they overstated the difference in level and ranking, and understated the decision changes.
   - In a one-minute re-encoding test, x264 coding of film frames raised the reading in steps with the quality, by
     0.6 px even at 43 dB, while x265 at the same rate raised it less. A follow-up 2 × 2 test points to the codec for
     Update 1 Small. For Update 3 it does not separate the codec from the bit depth. The encodes are second generation,
@@ -56,13 +67,13 @@ One run, three changes (photo coding, continuous ladder, no masks): no result he
 
 ## Deviations from the protocol
 
-- **Item 5 covers a subset.** The protocol registers 18 episodes in AVC and HEVC and 12 in AV1. Episodes 1 and 2 were
-  run in AVC and HEVC, and episode 2 in AV1.
-  - The episodes were chosen on 2026-10-30, before the item 5 results: episode 1 for its flash scenes, episode 2 as the
-    first in all three codecs.
-  - The full round would take about 21 GPU hours at the measured speed, and it was not run.
-  - The log and the docstring of `eval/yr.py` wrongly call this a choice within the protocol. The protocol fixes the
-    episodes too.
+- **Item 5 ran in two rounds.** The protocol registers 18 episodes in AVC and HEVC and 12 in AV1.
+  - The first round ran episodes 1 and 2 in AVC and HEVC, and episode 2 in AV1. They were chosen on 2026-10-30, before
+    the item 5 results: episode 1 for its flash scenes, episode 2 as the first in all three codecs. Those results were
+    published, and the re-encoding tests of section 6 were designed from them.
+  - The full round ran on 2026-10-31 (03:41–23:25), with its analysis recorded in the log before it started. Section 6
+    reports all 18 episodes.
+  - The log wrongly called the first round's subset a choice within the protocol. The protocol fixes the episodes too.
 - **Item 4's visual inspection has not been done.** Only the cell-level witness was run.
 
 ## 1. Run and export
@@ -230,61 +241,170 @@ cells; the within-frame Spearman between the cell map and the measured motion, m
 
 ## 6. Item 5: one series in several codecs
 
-Every frame of episode 1 in AVC and HEVC, and of episode 2 in AVC, HEVC and AV1, of the test series (not named),
-scored with both models; the whole 1920 × 1080 frame with its bars, as FrameBlurStudio scores. The files of one
-episode align frame by frame (the luma sequences correlate at 0.9999 at zero offset).
+Every frame of the 18 episodes in AVC and HEVC and of the 12 in AV1, as registered: 48 files, 3,207,491 frames of the
+test series (not named), scored with both models; the whole 1920 × 1080 frame with its bars, as FrameBlurStudio scores.
 
-| encode | codec, bit depth | video rate (with audio) | frames |
+- **The episodes are numbered 1–18 in order.** AV1 exists for all but episodes 1 and 13–17.
+- **The files of one episode align frame by frame.** In all 42 codec pairs the luma sequences correlate best at zero
+  offset, at 0.9999 or more.
+- **The unit is the episode.** The intervals are bootstraps over the episodes (2000 resamples, seed 20261030). All of it
+  is one series, so they say nothing about other material.
+
+| codec | format | video rate, median (range) | encoder |
 |---|---|---|---|
-| episode 1 AVC | H.264 High, 8 bit | 2.20 Mbit/s (2.59) | 62,674 |
-| episode 1 HEVC | HEVC Main 10 (I and B frames) | 2.48 Mbit/s (3.13) | 62,674 |
-| episode 2 AVC | H.264 High, 8 bit | 2.34 Mbit/s (2.73) | 72,968 |
-| episode 2 HEVC | HEVC Main 10 | 2.30 Mbit/s (2.75) | 72,968 |
-| episode 2 AV1 | AV1 Main, 10 bit, film grain | 1.49 Mbit/s (1.94) | 72,968 |
+| AVC | H.264 High, 8 bit | 2.14 (1.77–2.61) Mbit/s | x264 core 148: CRF 16, or 17 in episodes 1, 12 and 18 |
+| HEVC | Main 10, I and B frames | 1.78 (1.47–2.48) Mbit/s | not known |
+| AV1 | Main, 10 bit | 1.17 (0.53–1.60) Mbit/s | not known; film-grain synthesis in 11 of the 12 files |
 
-- The encoders of these files are not known: AVC and HEVC name the format here, not x264 or x265.
-- **The AV1 file carries film-grain synthesis.** `apply_grain` is set in 68,246 of its 72,968 frame headers, and the
-  decoder used here applies it. So its readings are of grained frames, and it cannot show that the bit rate does not
-  matter.
+- **A correction.** An earlier version of this report said the encoders of these files were not known. The AVC files
+  carry the x264 banner at the start of the stream; it had not been read. In all 18 files the rate control and coding
+  settings are the same apart from the CRF; episode 1 also has a newer x264 build and another thread count
+  ([data/yr_file_facts.json](data/yr_file_facts.json)):
+  `rc=crf, ref=4, bframes=16, b_pyramid=2, weightp=2, keyint=240, keyint_min=121, scenecut=0, rc_lookahead=240,
+  mbtree=1, qcomp=0.50, aq=1:0.80, psy_rd=1.00:0.00, deblock=1:0:0, vbv_maxrate=20000, vbv_bufsize=25000, me=umh,
+  subme=10, me_range=120, trellis=2`.
+- **Film grain.** In 11 AV1 files `apply_grain` is set in 92–95% of the frame headers, and the decoder used here applies
+  it. Episode 7's AV1 file has no film grain at all.
 
-**Phase II I-frame enrichment** (the sharpest frame of each 1 / 5 / 20 s window, ties shared, dark frames excluded,
-against the I-frame share of the windows; 95% interval for 5 s):
+**Agreement between the encodes, over the episodes** (Spearman of the logits on the same frames; the share of frames
+whose r95 decision differs; the median paired logit difference):
 
-| | Update 3 | Small |
-|---|---|---|
-| episode 1 AVC | 9.9 / 24.2 [20.9, 27.6] / 17.1 | 21.0 / 69.4 [65.1, 73.7] / 82.7 |
-| episode 1 HEVC | 2.5 / 4.5 [3.0, 6.0] / 7.5 | 1.6 / 1.4 [0.5, 2.4] / 1.2 |
-| episode 2 AVC | 9.7 / 23.0 [19.4, 26.6] / 17.7 | 21.3 / 81.8 [77.8, 86.0] / 107.7 |
-| episode 2 HEVC | 2.9 / 4.0 [2.4, 5.7] / 6.6 | 1.4 / 2.1 [1.0, 3.4] / 1.5 |
-| episode 2 AV1 | 2.8 / 3.9 [2.3, 5.8] / 3.1 | 1.6 / 2.8 [1.4, 4.3] / 3.1 |
-
-- On AVC Update 3's enrichment is a third to a sixth of Small's, but still large. On HEVC and AV1 Small has almost
-  none and Update 3 a little more.
-- Update 3's median px by frame type: episode 1 AVC I 0.41, P 3.56, B 3.08; HEVC I 0.25, B 0.15. Episode 2 AVC I
-  0.42, P 3.15, B 2.70; HEVC I 0.36, B 0.19; AV1 I 0.14, P 0.22.
-- **The light-jump control.** In the source encode a flash starts a keyframe (recorded before the results).
-  - On episode 1 AVC, the share called sharp at r95, Update 3 against Small: an I-frame with a light jump 34% against
-    93%; an I-frame without one 18% against 89%; a P-frame with a light jump 3% against 20%.
-  - The I-frame's logit against the median of its ±4 neighbours: Update 3 −3.41 (no jump) and −6.77 (jump), Small
-    −14.0 and −16.8.
-
-**Agreement between the encodes:**
-
-| pair | U3 Spearman | Small Spearman | U3 r95 decision changes | Small r95 decision changes |
+| measure | Update 3, median [range] | Small, median [range] | U3 − Small [95%] | U3 higher in |
 |---|---|---|---|---|
-| episode 1 AVC ~ HEVC | 0.328 | 0.828 | 25.5% | 20.6% |
-| episode 2 AVC ~ HEVC | 0.290 | 0.778 | 24.6% | 24.0% |
-| episode 2 AVC ~ AV1 | 0.395 | 0.603 | 25.1% | 26.8% |
-| episode 2 HEVC ~ AV1 | 0.633 | 0.664 | 19.9% | 25.9% |
+| AVC ~ HEVC, Spearman | 0.429 [0.290, 0.569] | 0.862 [0.778, 0.902] | −0.433 [−0.463, −0.404] | 0 / 18 |
+| AVC ~ HEVC, r95 decisions that change | 29.7% [22.8, 42.3] | 20.6% [16.3, 24.0] | +12.4 [+4.5, +14.9] | 18 / 18 |
+| AVC ~ HEVC, median logit, AVC − HEVC | +2.78 [+1.00, +5.57] | +1.81 [+1.50, +2.17] | +0.96 [+0.25, +1.64] | 14 / 18 |
+| AVC ~ AV1, Spearman | 0.450 [0.316, 0.564] | 0.622 [0.494, 0.864] | −0.177 [−0.218, −0.156] | 0 / 12 |
+| AVC ~ AV1, r95 decisions that change | 28.5% [22.7, 37.0] | 28.7% [20.3, 37.9] | −0.7 [−3.1, +2.3] | 5 / 12 |
+| AVC ~ AV1, median logit, AVC − AV1 | +2.93 [+0.70, +4.34] | +1.93 [+0.99, +2.43] | +1.11 [+0.59, +2.04] | 10 / 12 |
+| HEVC ~ AV1, Spearman | 0.752 [0.633, 0.841] | 0.650 [0.577, 0.913] | +0.114 [+0.045, +0.155] | 10 / 12 |
+| HEVC ~ AV1, r95 decisions that change | 17.1% [15.6, 23.4] | 27.0% [12.4, 31.0] | −9.3 [−11.0, −7.6] | 1 / 12 |
+| HEVC ~ AV1, median logit, HEVC − AV1 | +0.14 [−1.21, +0.50] | +0.03 [−0.60, +0.80] | +0.11 [−0.24, +0.67] | 6 / 12 |
 
-- **Level:** Update 3 reads the AVC encodes at 2.77–3.15 px (median) and the HEVC and AV1 encodes at 0.15–0.21 px.
-  Small reads AVC about 2 logits blurrier than HEVC.
-- **Added: the same frame, another frame type** (`eval/yr_typepairs.py`):
-  - where a frame is an I-frame in both encodes, Update 3 reads AVC and HEVC alike (+0.29 and +0.03 logit). Small
-    gives −11.5 and −10.6, its old I-frame bias in x264;
-  - where it is P or B, Update 3 reads AVC 4.1–6.1 logits blurrier (Small 2.0–2.5).
-- On the 10-bit encodes, across Small's deciles 1–9 Update 3 reads 0.05–0.52 px; only the top decile reaches 1.2–2.2
-  px. On AVC Update 3 follows Small's order (Spearman 0.87–0.91).
+**Phase II I-frame enrichment** (the sharpest frame of each window, ties shared, dark frames excluded, against the
+I-frame share of the windows):
+
+| encode, window | Update 3, median [range] | Small, median [range] | U3 − Small [95%] | U3 higher in |
+|---|---|---|---|---|
+| AVC, 1 s | 7.4 [5.3, 10.0] | 19.8 [16.4, 21.3] | −12.4 [−12.9, −11.2] | 0 / 18 |
+| AVC, 5 s | 15.8 [10.7, 25.4] | 69.6 [56.7, 81.9] | −53.7 [−57.5, −49.7] | 0 / 18 |
+| AVC, 20 s | 10.8 [4.2, 20.5] | 91.7 [81.0, 109.8] | −83.2 [−90.0, −75.3] | 0 / 18 |
+| HEVC, 1 s | 2.7 [1.9, 3.9] | 1.5 [1.0, 2.3] | +1.3 [+0.9, +1.5] | 18 / 18 |
+| HEVC, 5 s | 4.5 [2.3, 7.7] | 1.8 [0.5, 4.3] | +2.7 [+2.0, +3.2] | 18 / 18 |
+| HEVC, 20 s | 5.3 [2.6, 15.7] | 2.5 [0.0, 7.5] | +3.1 [+1.2, +4.6] | 16 / 18 |
+| AV1, 1 s | 2.5 [1.8, 4.2] | 2.1 [1.0, 2.7] | +0.9 [+0.3, +1.2] | 11 / 12 |
+| AV1, 5 s | 3.4 [1.5, 8.5] | 2.9 [0.8, 5.0] | +0.7 [−0.6, +2.3] | 8 / 12 |
+| AV1, 20 s | 3.4 [0.8, 16.3] | 4.4 [0.0, 9.4] | +0.2 [−2.3, +0.8] | 6 / 12 |
+
+**Episode by episode:**
+
+| episode | x264 CRF | U3 px, AVC / HEVC / AV1 | AVC frames over 1 px | Spearman AVC ~ HEVC, U3 / Small | logit AVC − HEVC, U3 / Small | r95 changes, U3 / Small | 5 s enrichment on AVC, U3 / Small |
+|---|---|---|---|---|---|---|---|
+| 1 | 17 | 3.15 / 0.15 / – | 73% | 0.328 / 0.828 | +5.57 / +2.17 | 25.5% / 20.6% | 24.2 / 69.4 |
+| 2 | 16 | 2.77 / 0.19 / 0.21 | 68% | 0.290 / 0.778 | +4.20 / +2.09 | 24.6% / 24.0% | 23.0 / 81.8 |
+| 3 | 16 | 2.83 / 0.19 / 0.21 | 72% | 0.379 / 0.860 | +4.49 / +2.15 | 22.8% / 22.2% | 20.6 / 75.7 |
+| 4 | 16 | 2.25 / 0.23 / 0.19 | 63% | 0.379 / 0.823 | +2.77 / +1.76 | 24.2% / 20.6% | 19.9 / 81.9 |
+| 5 | 16 | 2.36 / 0.18 / 0.15 | 64% | 0.413 / 0.853 | +3.24 / +1.98 | 24.6% / 21.1% | 15.8 / 78.9 |
+| 6 | 16 | 1.32 / 0.16 / 0.11 | 53% | 0.456 / 0.881 | +1.71 / +1.64 | 26.6% / 18.9% | 10.7 / 77.2 |
+| 7 | 16 | 2.54 / 0.11 / 0.48 | 65% | 0.498 / 0.902 | +3.96 / +1.81 | 29.6% / 16.8% | 15.8 / 69.0 |
+| 8 | 16 | 2.30 / 0.11 / 0.11 | 62% | 0.511 / 0.891 | +2.98 / +1.81 | 29.3% / 17.3% | 13.0 / 67.3 |
+| 9 | 16 | 2.08 / 0.15 / 0.20 | 61% | 0.459 / 0.845 | +2.39 / +1.95 | 26.7% / 22.5% | 13.1 / 69.7 |
+| 10 | 16 | 2.62 / 0.17 / 0.15 | 66% | 0.404 / 0.891 | +2.80 / +1.89 | 29.9% / 16.3% | 19.8 / 70.2 |
+| 11 | 16 | 1.73 / 0.08 / 0.08 | 57% | 0.339 / 0.864 | +3.14 / +2.00 | 35.9% / 21.9% | 17.5 / 75.0 |
+| 12 | 17 | 1.52 / 0.08 / 0.07 | 55% | 0.489 / 0.898 | +2.32 / +1.86 | 32.8% / 17.9% | 14.8 / 68.0 |
+| 13 | 16 | 0.21 / 0.04 / – | 41% | 0.569 / 0.890 | +1.00 / +1.81 | 32.2% / 20.9% | 11.0 / 64.0 |
+| 14 | 16 | 0.44 / 0.03 / – | 45% | 0.490 / 0.862 | +1.91 / +1.61 | 38.3% / 22.3% | 14.1 / 71.7 |
+| 15 | 16 | 0.28 / 0.04 / – | 42% | 0.463 / 0.861 | +1.30 / +1.68 | 36.5% / 19.8% | 15.4 / 56.7 |
+| 16 | 16 | 0.22 / 0.03 / – | 41% | 0.395 / 0.856 | +1.46 / +1.56 | 39.3% / 21.4% | 17.5 / 62.5 |
+| 17 | 16 | 0.23 / 0.03 / – | 40% | 0.428 / 0.867 | +1.26 / +1.50 | 36.2% / 19.1% | 13.4 / 59.7 |
+| 18 | 17 | 2.28 / 0.03 / 0.07 | 60% | 0.431 / 0.857 | +4.68 / +1.73 | 42.3% / 19.5% | 25.4 / 64.4 |
+
+**Were the first two episodes typical?** The first round ran episodes 1 and 2 before the rest. The rule was recorded in
+the log before the full round: typical if, on the three main measures (AVC ~ HEVC Spearman, AVC ~ HEVC median logit
+difference, AVC enrichment in 5 s windows) and for both models, both episodes lie inside the range of the other 16, and
+U3 − Small keeps the first round's sign with an interval that excludes 0.
+
+| measure | episodes 1 / 2, U3 | other 16, U3 | episodes 1 / 2, Small | other 16, Small | U3 − Small, first round → all 18 |
+|---|---|---|---|---|---|
+| Spearman | 0.328 / 0.290 | 0.339–0.569 | 0.828 / 0.778 | 0.823–0.902 | −0.494 → −0.433 [−0.463, −0.404] |
+| median logit difference | +5.57 / +4.20 | +1.00 to +4.68 | +2.17 / +2.09 | +1.50 to +2.15 | +2.75 → +0.96 [+0.25, +1.64] |
+| enrichment, 5 s | 24.2 / 23.0 | 10.7–25.4 | 69.4 / 81.8 | 56.7–81.9 | −52.0 → −53.7 [−57.5, −49.7] |
+
+- **By the rule they were not typical.** The direction holds on all three measures. Enrichment is inside the range.
+  On the other two, episode 1 or 2 falls outside it, in both models.
+- **The first round overstated the difference in level and in ranking** (Update 3's logit gap +4.88 against +2.78 over
+  the series; its Spearman 0.309 against 0.429).
+- **It understated the decision changes,** which were not among the three measures. There Update 3 and Small looked
+  close (25.1% against 22.3%). Over the series Update 3 changes more in all 18 episodes (29.7% against 20.6%), and in
+  episodes 13–18 it changes 32–42% against 19–22%.
+
+**What the full round shows:**
+
+- **AVC against HEVC.** In all 18 episodes both models read the AVC file blurrier. Update 3's gap is larger in 14 of
+  18 and varies far more (+1.00 to +5.57 logits; Small +1.50 to +2.17). Update 3 also ranks the frames of the two files
+  much less alike (Spearman 0.429 against 0.862, lower in all 18).
+- **HEVC against AV1: Update 3 is the steadier.** Spearman 0.752 against 0.650 (higher in 10 of 12), and 17.1% of the
+  r95 decisions change against 27.0% (fewer in 11 of 12).
+- **AVC against AV1:** Update 3 ranks less alike (0.450 against 0.622), with the same share of decision changes.
+- **Enrichment.** On AVC Update 3's is lower in every episode and window: per episode 0.14–0.40 of Small's in 5 s
+  windows (median 0.23), and still large. On HEVC it is higher than Small's in every episode at 1 and 5 s, though small
+  in itself (4.5× against 1.8× at 5 s). On AV1 the two do not differ at 5 or 20 s.
+- **The share called sharp at r95, by frame type** (median over the episodes):
+
+  | encode | Update 3 | Small |
+  |---|---|---|
+  | AVC | I 25%, P 19%, B 23% | I 84%, P 22%, B 28% |
+  | HEVC | I 33%, B 35% | I 37%, B 45% |
+  | AV1 | I 35%, P 31% | I 47%, P 50% |
+
+- **Update 3's px level.** Median px per file: AVC 2.16 (0.21–3.15), HEVC 0.11 (0.03–0.23), AV1 0.15 (0.07–0.48).
+  Frames over 1 px: AVC 60% (40%–73%), HEVC 18% (9%–29%), AV1 23% (17%–40%).
+  - By frame type on AVC, over the episodes: I 0.03–0.69, P 0.56–3.56, B 0.18–3.08 px. On HEVC: I
+    0.03–0.71, B 0.03–0.23 px.
+- **The px gap to HEVC depends on how it is taken.** As a gap of the two medians: 1.97 px (0.17–3.01). As a paired
+  per-frame median: 0.90 px (0.03–2.32). On AVC the median moves a long way when the share of frames over 1 px
+  crosses one half.
+
+**Added: the same frame, another frame type** (`eval/yr_typepairs.py`). AVC − HEVC in logits, median over the episodes
+(range):
+
+| frame type in AVC / HEVC | frames | Update 3 | Small |
+|---|---|---|---|
+| I / I | 11,337 | +0.15 (−0.18 to +0.62) | −7.84 (−11.51 to −4.54) |
+| B / B | 924,164 | +2.68 (+1.00 to +5.52) | +1.77 (+1.46 to +2.13) |
+| P / B | 192,076 | +3.45 (+1.21 to +6.13) | +2.21 (+1.88 to +2.57) |
+
+- Where a frame is an I-frame in both files, Update 3 reads them alike. Small reads the AVC I-frame far sharper, its old
+  I-frame bias in x264. Where a frame is P or B, both read AVC blurrier, Update 3 by more.
+
+**Added: noticed after the full round, not registered** (`eval/yr_file_facts.py`):
+
+- **The same settings, a very different reading.** In episodes 13–17 Update 3 reads the AVC file at 0.21–0.44 px
+  (40–45% of the frames over 1 px), and in episode 18 at 2.28 px (60%).
+  - The HEVC files read alike in all six (0.03–0.04 px). The x264 settings differ only in the CRF (16 against 17).
+  - Small's logit gap to HEVC hardly moves (+1.50 to +1.81 against +1.73); Update 3's jumps (+1.00 to +1.91 against
+    +4.68).
+  - Episodes 1 and 18 (CRF 17) have the two largest gaps of the series, but episode 12, also CRF 17, does not (+2.32).
+    So the CRF alone does not explain it, and the cause is not established.
+  - So Update 3's px compare only within one encode. The same codec and settings do not make two files comparable.
+- **Episode 7's AV1 file, without film grain, behaves differently** (one episode, at 0.75 Mbit/s, not a test):
+  - Small agrees with it far better than with the other AV1 files: Spearman with HEVC 0.913 against 0.577–0.669, r95
+    changes 12.4% against 25.8–31.0%; Spearman with AVC 0.864 against 0.494–0.666.
+  - Update 3's agreement with HEVC stays inside the others' range (0.801 against 0.633–0.841).
+  - Update 3 reads it blurrier: 0.48 px against 0.07–0.21 px, 40% of the frames over 1 px against 17–26%; the median
+    logit difference HEVC − AV1 is −1.21 against −0.68 to +0.50.
+  - This suggests that Small's low agreement with the other AV1 files comes from the synthesised grain rather than the
+    codec, and that grain lowers Update 3's reading. One file cannot show either.
+- **Inside one file** the two models rank the frames alike on AVC (Spearman 0.858, 0.758–0.908) and much less
+  alike on HEVC (0.424, 0.335–0.497) and AV1 (0.416, 0.330–0.588). On HEVC, across Small's deciles 1–9 Update 3
+  reads 0.01–1.43 px; the top decile reads 1.70 px (0.34–3.35).
+
+**The light-jump control.** In the source encode a flash starts a keyframe (recorded before the results). The values per
+episode are in [data/yr.json](data/yr.json); episode 1, the episode chosen for its flash scenes:
+- On episode 1 AVC, the share called sharp at r95, Update 3 against Small: an I-frame with a light jump 34% against
+  93%; an I-frame without one 18% against 89%; a P-frame with a light jump 3% against 20%.
+- The I-frame's logit against the median of its ±4 neighbours: Update 3 −3.41 (no jump) and −6.77 (jump), Small
+  −14.0 and −16.8.
 
 **Added: why the encodes differ.** Two explanations were checked on episode 1:
 - **Dither:** the 10 → 8 bit conversion does not dither on this path. The decoded pixels are byte-identical with
@@ -310,8 +430,9 @@ Then one minute of episode 2 (1,440 frames) was decoded from HEVC and re-encoded
 **How far this test goes:**
 - It is one minute of one episode, and not a typical minute. The AVC and HEVC files spend 1.9 and 1.7 times their average
   rate on it, and Update 3 reads them at 3.26 and 0.62 px, against 2.77 and 0.19 px over the episode.
-- The re-encodes are second generation: their input is the HEVC file decoded to 8-bit RGB. The AVC file was coded once,
-  by an unknown encoder.
+- The re-encodes are second generation: their input is the HEVC file decoded to 8-bit RGB. The AVC file is x264 at
+  CRF 16 with other settings (16 B-frames, for example), from a source not available here. So equal CRF values do not
+  compare: in this minute the file at CRF 16 takes 4.5 Mbit/s, and the re-encode at CRF 18 takes 8.4 Mbit/s.
 - x264 ran in 8 bit and x265 in 10 bit, so this table does not separate the codec from the bit depth (see the 2 × 2 test
   below).
 - Both 2.7 Mbit/s runs got less than the reference's 3.9 Mbit/s, so part of x265's rise may be the lower rate.
@@ -403,7 +524,7 @@ Worked out after the decision, as a description ([data/yr_depth_simple.json](dat
 - **Between two good H.264 releases Update 3 is as stable as Small,** with no level difference (0.018 against
   0.015 px).
 - Small reproduces the Update 1 Base corpus figure (85.0%, κ 0.68).
-- **So the test series' difference is not a general instability between encodes.** In the two episodes tested it is the
+- **So the test series' difference is not a general instability between encodes.** In the 18 episodes tested it is the
   AVC encode against the 10-bit ones. These releases run well above the series' rate and are all H.264, so they do
   not test low-rate H.264 or other codecs.
 
@@ -442,5 +563,4 @@ Worked out after the decision, as a description ([data/yr_depth_simple.json](dat
 ## 8. Not done
 
 - The author's visual inspection of the cell maps (item 4). Update 3 is now in FrameBlurStudio, so it can be done.
-- The other 16 episodes in AVC and HEVC and the other 11 in AV1 (item 5).
 - The 2×2 design's other runs, so the three changes stay confounded.

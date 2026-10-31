@@ -261,9 +261,9 @@ while not losing more than a fixed margin on the VLM labels:
 - **Two results argue against using it as a teacher as it is:**
   - Its cell map ranks the cells of a frame by motion less well than Update 1's (0.249 against 0.338). Update 2
     learned Update 1's map closely, so a student would inherit this.
-  - On film its reading still depends on the encode. In the two episodes tested the I-frame preference fell, but the
-    AVC file reads about 2.6–3 px blurrier than the same frames in 10-bit HEVC or AV1. Update 1 shows the same
-    difference in logits, so a student of either model would inherit it.
+  - On film its reading still depends on the encode. In the 18 episodes tested the I-frame preference fell, but the
+    median px of the AVC file is 0.2–3 px above the same frames in 10-bit HEVC. Update 1 shows the same difference in
+    logits, so a student of either model would inherit it.
 - **What a Generation 2 with a continuous ladder would add:**
   - Update 3's cell maps, and possibly its px, over the whole corpus;
   - the continuous GOP-coded ladder;
@@ -647,7 +647,7 @@ exists to make one coding property the same on photos and frames, so that the mo
    - **Its result, on photo clips:** the gap is gone in all three codecs.
      - R4K-2: P/B − I-only is +0.00 logit, against +13.2 for Update 1 Small (CRF 23, pan).
      - GOP ladder: a clip's I- and P/B frames differ by at most 0.015 px.
-   - **Its result, on film (two episodes of one series):** the I-frame preference fell to a third or less of Update 1
+   - **Its result, on film (18 episodes of one series):** the I-frame preference fell to about a quarter of Update 1
      Small's. But the AVC encodes read blurrier than the same frames in 10-bit HEVC or AV1, for both models (Section
      17).
 4. **The rest of the chain:** BT.709, TV range, 4:2:0, as in the frames. The CRF varies:
@@ -1030,7 +1030,7 @@ in the original runs, 48,000 in Update 1 and Update 3.
 | Update 1 Base | 589,663 frames, binary photos 0–3 / 16–30 px | a decision, plus a cell map | AUC 0.963; 80.4 / 67.9% at r95 / r98 | no (0.62) | yes: within-frame Spearman 0.34 with the measured motion (160 px cells); frame score 0.71 / 0.73 with region / subject motion, 0.20 with camera motion | yes (R4K-1, R4K-2) |
 | Update 1 Small | the same | the same | AUC 0.962; 79.0 / 65.8% | no (0.66) | its M follows the motion as the Base's does (Spearman 0.715 against 0.716) | yes, more false alarms |
 | Update 2 | Update 1's cell maps on 4.85 M frames, photos 0–3 / 10–30 px | blur mass and a map | AUC 0.959; test films 77.2 / 64.1% | M ties; mean cell logit 82% (photos) | follows Update 1's map (M Spearman 0.973) and the motion (0.685) | yes (R4K-1: 86% against Update 1's 93%) |
-| Update 3 | Update 1's frames, a continuous GOP-coded ladder | a decision plus px, and a px map | AUC 0.963; 78.9 / 63.6% | yes (0.996) | weaker inside a frame (within-frame Spearman 0.25 against 0.34); inside a VLM code its cells follow the motion as Update 1 Small's | none on photo clips; on film (two episodes) the I-frame preference is a third or less of Update 1's, but the AVC encodes read 2.6–3 px above 10-bit HEVC or AV1 |
+| Update 3 | Update 1's frames, a continuous GOP-coded ladder | a decision plus px, and a px map | AUC 0.963; 78.9 / 63.6% | yes (0.996) | weaker inside a frame (within-frame Spearman 0.25 against 0.34); inside a VLM code its cells follow the motion as Update 1 Small's | none on photo clips; on film (18 episodes) the I-frame preference is about a quarter of Update 1's, but the median px of the AVC encodes is 0.2–3 px above 10-bit HEVC |
 
 **Consistency of Update 1 over the whole corpus:**
 - **Inside a shot:** the measured motion separates its blurred from its sharp frames with a median AUC of 0.854; the
@@ -1140,9 +1140,9 @@ labels.
 - untextured or dark regions;
 - uncoded or JPEG images (outside the chain);
 - other resolutions and HDR (untested);
-- codecs other than H.264. Every training video is H.264 8 bit. In the two episodes tested, on the same frames, the
-  AVC file reads about 2.6–3 px blurrier than 10-bit HEVC or AV1 for Update 3, and about 2 logits blurrier for Update
-  1 Small (Update 3, item 5). Between two H.264 releases of a film the two models agree as well as each other (85% at
+- codecs other than H.264. Every training video is H.264 8 bit. In the 18 episodes tested, on the same frames, the
+  AVC file reads blurrier than 10-bit HEVC: by +2.8 logits for Update 3 (+1.0 to +5.6), and +1.8 for Update 1 Small
+  (+1.5 to +2.2) (Update 3, item 5). Between two H.264 releases of a film the two models agree as well as each other (85% at
   r95);
 - a single seed per run.
 
@@ -1197,7 +1197,7 @@ labels.
     reference on frames: a known shutter, or the cells most like the photos (uniform camera pans).
   - **The price:** the motion witness used for calibration is no longer independent (Section 2.3).
 - **The codec on the frame side.** GOP-coded anchors removed the frame-type bias on photos and reduced it on film.
-  But AVC encodes still read blurrier than 10-bit HEVC or AV1 on the same film frames (Update 3, item 5; two episodes).
+  But AVC encodes still read blurrier than 10-bit HEVC or AV1 on the same film frames (Update 3, item 5; 18 episodes).
   A one-minute 2 × 2 re-encoding test points to the codec for Update 1 Small, and does not separate the codec from the
   bit depth for Update 3; its encodes are second generation, from an HEVC source. Every training
   frame is H.264. Frames from other codecs, or the same film in several codecs, would be the next lever. Why x264

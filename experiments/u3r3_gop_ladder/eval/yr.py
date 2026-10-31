@@ -1,8 +1,9 @@
 """Protocol item 5: one series in several codecs (the test series is not named in anything published).
 
-Scope of this run (chosen 2026-10-30; the protocol fixes the measures, not the episodes): every frame of
-- S01E01 in AVC and HEVC SDR (the R4K-1 video A, with the flash and strobe scenes of napló 13:05), and
-- S01E02 in AVC, HEVC SDR and AV1 SDR (the first episode that exists in all three SDR codecs),
+Scope: the protocol registers all 18 episodes in AVC and HEVC SDR and the 12 in AV1 SDR. The first round (2026-10-30)
+ran S01E01 in AVC and HEVC SDR (the R4K-1 video A, with the flash and strobe scenes of napló 13:05) and S01E02 in AVC,
+HEVC SDR and AV1 SDR (the first episode that exists in all three SDR codecs); that subset was a deviation from the
+protocol (napló 2026-10-31 02:24). The full round (from 2026-10-31) runs the rest, episode by episode. Every frame is
 scored with Update 3 and the round3 Small (published Update 1 loader, bfloat16 autocast, whole 1920 x 1080 frame with
 its bars, as the FrameBlurStudio scores). Frame types, packet sizes and times from ffprobe; the mean luma of the
 active picture (rows 60 ... 1019) per frame.
@@ -10,7 +11,9 @@ active picture (rows 60 ... 1019) per frame.
 Measures (protocol): the agreement of the scores between codecs on the same frame (Spearman of the logits; the share
 of frames whose r95 decision differs), and the Phase II I-frame enrichment (the sharpest frame of each 1 / 5 / 20 s
 window, ties shared evenly, black frames excluded, against the I-frame share of the windows; R4K-1 Q6). Added after
-napló 13:05: light jumps (luma >= 1.4 x the median of +-4 frames) by frame type, as control.
+napló 13:05: light jumps (luma >= 1.4 x the median of +-4 frames) by frame type, as control. Over the episodes
+(recorded before the full round, napló 2026-10-31): the median and range of each measure per episode, and Update 3
+minus the Small with a bootstrap over the episodes.
 
 usage: python experiments/u3r3_eval/yr.py score [--only LABEL]     (resumable per video)
        python experiments/u3r3_eval/yr.py report
@@ -20,7 +23,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
+import sys
 import threading
 import queue
 import time
@@ -32,12 +37,20 @@ import torch
 import common as C
 
 VID = Path("F:/FrameBlurStudio/input video")
-VIDEOS = {"S01E01_AVC": VID / "AVC_SDR" / "<series>_episode1.mkv",
-          "S01E01_HEVC": VID / "HEVC_SDR" / "<series>_episode1.mkv",
-          "S01E02_AVC": VID / "AVC_SDR" / "<series>_episode2.mkv",
-          "S01E02_HEVC": VID / "HEVC_SDR" / "<series>_episode2.mkv",
-          "S01E02_AV1": VID / "AV1_SDR" / "<series>_episode2.mkv"}
+CODECS = {"AVC": "AVC_SDR", "HEVC": "HEVC_SDR", "AV1": "AV1_SDR"}
 W, H, BATCH = 1920, 1080, 8
+
+
+def _videos() -> dict:
+    """label -> file, episode by episode (AVC, HEVC, AV1), so that a stopped run leaves whole episodes."""
+    found = {}
+    for codec, folder in CODECS.items():
+        for path in sorted((VID / folder).glob("*.mkv")):
+            found[f"{re.search(r'S[0-9]{2}E[0-9]{2}', path.name).group(0)}_{codec}"] = path
+    return dict(sorted(found.items(), key=lambda kv: (kv[0].split("_")[0], list(CODECS).index(kv[0].split("_")[1]))))
+
+
+VIDEOS = _videos()
 
 
 def probe(path: Path) -> dict:
@@ -104,11 +117,19 @@ def score(a):
     u3, mu = C.load_u3()
     sm, _ = C.load_small()
     models = {"u3": u3, "small": sm}
+    failed = []
     for label, path in VIDEOS.items():
         if a.only and label != a.only:
             continue
-        assert path.exists(), path
-        score_video(label, path, models, mu)
+        try:
+            score_video(label, path, models, mu)
+        except Exception as exc:                # one bad file must not stop a run of many hours
+            failed.append(label)
+            C.log(f"{label}: HIBA, kihagyva: {exc!r}")
+    if failed:
+        C.log(f"hibás videók ({len(failed)}): {failed}")
+        sys.exit(1)
+    C.log("minden videó kész")
 
 
 def _nb_median(x, w=4):
@@ -141,6 +162,52 @@ def phase2(t, typ, score_, eligible, rng, reps=2000):
     return out
 
 
+FIRST_ROUND = ("S01E01", "S01E02")
+
+
+def _summary(per_ep: dict, rng, reps=2000) -> dict:
+    """episode -> {u3, small}: the median and range per model, U3 - Small with a bootstrap over the episodes, and
+    whether the first round's episodes lie inside the range of the others."""
+    eps = sorted(per_ep)
+    out = {"episodes": len(eps)}
+    for m in ("u3", "small"):
+        v = np.array([per_ep[ep][m] for ep in eps], float)
+        out[m] = {"median": float(np.median(v)), "min": float(v.min()), "max": float(v.max())}
+        rest = [per_ep[ep][m] for ep in eps if ep not in FIRST_ROUND]
+        first = [per_ep[ep][m] for ep in eps if ep in FIRST_ROUND]
+        if rest and first:
+            out[m]["first_round_inside_range_of_others"] = bool(min(rest) <= min(first) and max(first) <= max(rest))
+    d = np.array([per_ep[ep]["u3"] - per_ep[ep]["small"] for ep in eps], float)
+    boot = [np.median(d[rng.integers(0, len(d), len(d))]) for _ in range(reps)]
+    out["u3_minus_small"] = {"median": float(np.median(d)), "ci95": np.percentile(boot, [2.5, 97.5]).tolist(),
+                             "u3_higher_episodes": int((d > 0).sum())}
+    return out
+
+
+def over_episodes(res: dict, rng) -> dict:
+    """The episode is the unit here. All of it is one series, so the intervals say nothing about other material."""
+    out = {"note": "intervals: bootstrap over the episodes of one series"}
+    for pair in ("AVC~HEVC", "AVC~AV1", "HEVC~AV1"):
+        x, y = pair.split("~")
+        items = {k.split("_")[0]: e for k, e in res["agreement"].items()
+                 if k.endswith(f"_{y}") and f"_{x}~" in k and "error" not in e}
+        if not items:
+            continue
+        for name, key in (("spearman_logits", "spearman_logits"), ("decision_flips_r95", "decision_flips_r95"),
+                          ("median_logit_x_minus_y", "median_logit_x_minus_y")):
+            out[f"{pair}/{name}"] = _summary({ep: {m: e[m][key] for m in ("u3", "small")} for ep, e in items.items()}, rng)
+    for codec in CODECS:
+        videos = {k.split("_")[0]: e for k, e in res["videos"].items() if k.endswith(f"_{codec}")}
+        if not videos:
+            continue
+        for window in ("1s", "5s", "20s"):
+            out[f"{codec}/enrichment_{window}"] = _summary(
+                {ep: {m: e[m]["phase2"][window]["enrichment"] for m in ("u3", "small")} for ep, e in videos.items()}, rng)
+        px = np.array([e["u3_px_median"] for e in videos.values()])
+        out[f"{codec}/u3_px_median"] = {"episodes": len(px), "median": float(np.median(px)), "min": float(px.min()), "max": float(px.max())}
+    return out
+
+
 def report(a):
     _, mu = C.load_u3("cpu")
     _, ms = C.load_small("cpu")
@@ -165,9 +232,12 @@ def report(a):
                                                   ("P_with_jump", spike & (typ == "P")), ("P_without_jump", lit & ~spike & (typ == "P")),
                                                   ("B", lit & (typ == "B")))}}
         e["u3_px_median_by_type"] = {ty: float(np.median(d["u3_L"][lit & (typ == ty)])) for ty in ("I", "P", "B") if (lit & (typ == ty)).any()}
+        e["u3_px_median"] = float(np.median(d["u3_L"][lit]))
+        e["u3_logit_median"] = float(np.median(d["u3_logit"][lit]))
+        e["small_logit_median"] = float(np.median(d["small_logit"][lit]))
         res["videos"][lab] = e
     from scipy.stats import spearmanr
-    for ep in ("S01E01", "S01E02"):
+    for ep in sorted({lab.split("_")[0] for lab in D}):
         labs = [lab for lab in D if lab.startswith(ep)]
         for i in range(len(labs)):
             for j in range(i + 1, len(labs)):
@@ -183,8 +253,10 @@ def report(a):
                     both_non_i = (x["type"][lit] != "I") & (y["type"][lit] != "I")
                     e[m] = {"spearman_logits": float(spearmanr(sx, sy)[0]), "decision_flips_r95": float(np.mean(cx != cy)),
                             "decision_flips_r95_non_I": float(np.mean(cx[both_non_i] != cy[both_non_i])),
-                            "median_abs_logit_difference": float(np.median(np.abs(sx - sy)))}
+                            "median_abs_logit_difference": float(np.median(np.abs(sx - sy))),
+                            "median_logit_x_minus_y": float(np.median(sx - sy))}
                 res["agreement"][f"{labs[i]}~{labs[j]}"] = e
+    res["over_episodes"] = over_episodes(res, rng)
     (C.DATA / "yr.json").write_text(json.dumps(res, indent=1), encoding="utf-8")
     for lab, e in res["videos"].items():
         C.log(f"{lab}: I-arány {e['i_share']:.2%}; II. fázis dúsulás 1/5/20 s: "
@@ -195,6 +267,14 @@ def report(a):
             C.log(f"{k}: {e['error']}")
             continue
         C.log(f"{k}: " + "; ".join(f"{m} Spearman {e[m]['spearman_logits']:.3f}, döntésváltás r95 {e[m]['decision_flips_r95']:.2%}" for m in ("u3", "small")))
+    for k, e in res["over_episodes"].items():
+        if "u3_minus_small" in e:
+            d = e["u3_minus_small"]
+            C.log(f"{k} ({e['episodes']} epizód): U3 {e['u3']['median']:.3f} [{e['u3']['min']:.3f}–{e['u3']['max']:.3f}], Small {e['small']['median']:.3f} "
+                  f"[{e['small']['min']:.3f}–{e['small']['max']:.3f}]; U3 − Small {d['median']:+.3f} {np.round(d['ci95'], 3).tolist()}, "
+                  f"első kör a többi tartományán belül: U3 {e['u3'].get('first_round_inside_range_of_others')}, Small {e['small'].get('first_round_inside_range_of_others')}")
+        elif "median" in e:
+            C.log(f"{k} ({e['episodes']} epizód): {e['median']:.3f} [{e['min']:.3f}–{e['max']:.3f}]")
 
 
 def main():

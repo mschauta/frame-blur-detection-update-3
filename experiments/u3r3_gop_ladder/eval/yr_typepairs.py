@@ -27,7 +27,7 @@ def main():
     D = {lab: dict(np.load(C.DATA / f"yr_{lab}.npz", allow_pickle=False)) for lab in VIDEOS if (C.DATA / f"yr_{lab}.npz").exists()}
     rng = np.random.default_rng(C.SEED)
     res = {}
-    for ep in ("S01E01", "S01E02"):
+    for ep in sorted({lab.split("_")[0] for lab in D}):
         labs = [lab for lab in D if lab.startswith(ep)]
         for i in range(len(labs)):
             for j in range(i + 1, len(labs)):
