@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-DB = "J:/Autonom 3D-aware human image dataset processing & dataset-builder system/master/master.db"
+DB = "<master>/master.db"
 SRC = Path("I:/delete")
 SHARPNESS = {"sss": 3, "ssb": 2, "bss": 2, "sbb": 1, "bsb": 1, "bbb": 0}     # number of "sharp" answers
 
