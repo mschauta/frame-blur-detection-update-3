@@ -1,0 +1,241 @@
+{
+ "limit_mbps": 12.0,
+ "films_above": 5,
+ "films_below": 168,
+ "above": [
+  {
+   "film": 67,
+   "mbps": 39,
+   "size": [
+    1920,
+    1080
+   ],
+   "block": 0.57,
+   "lap": 77.8,
+   "noise": 0.463,
+   "spearman_u1_u3": 0.658,
+   "u1": {
+    "sharp_r90_r95_r98": [
+     74.7,
+     68.9,
+     60.6
+    ],
+    "logit_median": -5.19,
+    "cell_yellow_median": 6.4,
+    "red_median": 0.28,
+    "logit_vs_motion": 0.485,
+    "sss_kept_r98": 86.8,
+    "blurred_codes_among_kept_r98": 0.0
+   },
+   "u3": {
+    "sharp_r90_r95_r98": [
+     74.0,
+     54.6,
+     31.8
+    ],
+    "logit_median": -3.71,
+    "cell_yellow_median": 58.5,
+    "red_median": 0.53,
+    "logit_vs_motion": 0.254,
+    "sss_kept_r98": 88.1,
+    "blurred_codes_among_kept_r98": 0.4
+   },
+   "frames_thousands": 51,
+   "labelled_hundreds": 16
+  },
+  {
+   "film": 105,
+   "mbps": 25,
+   "size": [
+    1920,
+    1080
+   ],
+   "block": 0.553,
+   "lap": 70.9,
+   "noise": 0.556,
+   "spearman_u1_u3": 0.837,
+   "u1": {
+    "sharp_r90_r95_r98": [
+     70.2,
+     62.9,
+     53.2
+    ],
+    "logit_median": -4.43,
+    "cell_yellow_median": 7.0,
+    "red_median": 0.87,
+    "logit_vs_motion": 0.587,
+    "sss_kept_r98": 42.6,
+    "blurred_codes_among_kept_r98": 1.6
+   },
+   "u3": {
+    "sharp_r90_r95_r98": [
+     71.6,
+     62.3,
+     49.0
+    ],
+    "logit_median": -4.74,
+    "cell_yellow_median": 29.3,
+    "red_median": 0.53,
+    "logit_vs_motion": 0.523,
+    "sss_kept_r98": 32.2,
+    "blurred_codes_among_kept_r98": 3.5
+   },
+   "frames_thousands": 24,
+   "labelled_hundreds": 11
+  },
+  {
+   "film": 144,
+   "mbps": 24,
+   "size": [
+    1920,
+    1080
+   ],
+   "block": 0.563,
+   "lap": 62.5,
+   "noise": 0.463,
+   "spearman_u1_u3": 0.83,
+   "u1": {
+    "sharp_r90_r95_r98": [
+     70.0,
+     63.9,
+     56.7
+    ],
+    "logit_median": -5.03,
+    "cell_yellow_median": 5.9,
+    "red_median": 0.45,
+    "logit_vs_motion": 0.576,
+    "sss_kept_r98": 59.8,
+    "blurred_codes_among_kept_r98": 10.9
+   },
+   "u3": {
+    "sharp_r90_r95_r98": [
+     70.1,
+     58.1,
+     45.4
+    ],
+    "logit_median": -4.36,
+    "cell_yellow_median": 40.9,
+    "red_median": 0.59,
+    "logit_vs_motion": 0.54,
+    "sss_kept_r98": 42.6,
+    "blurred_codes_among_kept_r98": 16.9
+   },
+   "frames_thousands": 18,
+   "labelled_hundreds": 12
+  },
+  {
+   "film": 104,
+   "mbps": 13,
+   "size": [
+    1920,
+    1080
+   ],
+   "block": 0.514,
+   "lap": 310.9,
+   "noise": 0.556,
+   "spearman_u1_u3": 0.9,
+   "u1": {
+    "sharp_r90_r95_r98": [
+     72.7,
+     65.9,
+     57.0
+    ],
+    "logit_median": -5.08,
+    "cell_yellow_median": 4.6,
+    "red_median": 0.56,
+    "logit_vs_motion": 0.763,
+    "sss_kept_r98": 100.0,
+    "blurred_codes_among_kept_r98": 0.0
+   },
+   "u3": {
+    "sharp_r90_r95_r98": [
+     75.6,
+     66.3,
+     54.5
+    ],
+    "logit_median": -5.33,
+    "cell_yellow_median": 14.3,
+    "red_median": 0.54,
+    "logit_vs_motion": 0.751,
+    "sss_kept_r98": 100.0,
+    "blurred_codes_among_kept_r98": 0.0
+   },
+   "frames_thousands": 30,
+   "labelled_hundreds": 13
+  },
+  {
+   "film": 149,
+   "mbps": 12,
+   "size": [
+    1920,
+    1080
+   ],
+   "block": 0.505,
+   "lap": 147.0,
+   "noise": 0.649,
+   "spearman_u1_u3": 0.779,
+   "u1": {
+    "sharp_r90_r95_r98": [
+     85.3,
+     81.4,
+     76.4
+    ],
+    "logit_median": -8.02,
+    "cell_yellow_median": 2.3,
+    "red_median": 0.0,
+    "logit_vs_motion": 0.552,
+    "sss_kept_r98": 40.4,
+    "blurred_codes_among_kept_r98": 0.0
+   },
+   "u3": {
+    "sharp_r90_r95_r98": [
+     85.5,
+     80.4,
+     74.4
+    ],
+    "logit_median": -8.4,
+    "cell_yellow_median": 2.5,
+    "red_median": 0.0,
+    "logit_vs_motion": 0.595,
+    "sss_kept_r98": 43.1,
+    "blurred_codes_among_kept_r98": 0.0
+   },
+   "frames_thousands": 45,
+   "labelled_hundreds": 16
+  }
+ ],
+ "shift_median_below": {
+  "r90": 0.27,
+  "r95": -0.94,
+  "r98": -1.9
+ },
+ "shift_median_above": {
+  "r90": 0.26,
+  "r95": -0.97,
+  "r98": -4.17
+ },
+ "shift_below_p5_p95": {
+  "r90": [
+   -1.07,
+   2.27
+  ],
+  "r95": [
+   -2.87,
+   1.27
+  ],
+  "r98": [
+   -4.75,
+   0.64
+  ]
+ },
+ "spearman_shift_mbps_all": {
+  "r90": -0.029,
+  "r95": -0.055,
+  "r98": -0.112
+ },
+ "spearman_shift_mbps_below": {
+  "r90": -0.041,
+  "r95": -0.036,
+  "r98": -0.065
+ }
+}

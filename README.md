@@ -79,6 +79,23 @@ The control is Update 1 Small (release v1.1): the same frames, the same start an
 One run carries three changes (photo coding, continuous ladder, no masks), so none of these results can be assigned
 to one of them.
 
+## Update 1 and Update 3 on the whole corpus
+
+Added on 2026-11-02. Both models scored all 5,010,602 corpus frames, and the comparison reads those stored scores and
+cell maps. The control here is Update 1 **Base**, not Small, because only the Base has corpus scores, so the architecture and
+the recipe cannot be separated. The full report is
+[experiments/u3_corpus_comparison/README.md](experiments/u3_corpus_comparison/README.md).
+
+- **The decisions are nearly the same, and no witness picks a winner.** The Spearman of the frame logits is 0.938 (0.861
+  inside a shot), 93.7% of the r95 decisions agree, and strong contradictions are 3.4 per thousand. At equal sharp share
+  Update 3 is slightly ahead on motion inside a shot and on stability over the corpus; on the six held-out films those intervals include 0, except for decision flips at r90.
+- **Update 3 is stricter at r98:** 48.5% sharp against 50.9%, and 67.6% of the shots have a frame below r98 against 71.2%. At r90 the two are level.
+- **The largest difference is what the frame score is made of.** Without their red cells (logit ≥ 0), 60.5% of Update 3's frames between r95 and r90 stay above its r98, against 20.1% for Update 1 Base.
+  Update 3's score also responds to the wide field of cells below logit 0. In the shots the motion selection emptied, a weak proxy for close-ups, the shares are 80.5% and 32.9%.
+- **The whole cell map follows motion better in Update 1 Base** (0.239 against 0.175 inside a frame). On sharp frames both put their few red cells on the most moving parts (0.83 and 0.82), though rarely on the same cells.
+- **The bands between the thresholds form a usable scale.** Below r98, r98–r95, r95–r90 and from r90, the VLM's blurred codes (`bsb`, `bbb`) make up 0.6 / 4.2 / 12.0 / 71.8% of the labelled frames in Update 3. The r95–r90 band is the mixed one.
+- **On three films above 23 Mbps Update 3's r98 share falls** (at worst 31.8% against 60.6%) while r90 does not move. Three films are a lead, not a result.
+
 ## Weights
 
 `update3_small_p99_ep029.pt` (130 MB; SHA-256 `6cd68d831b63fdc5f8a6c02cef777c89fbd273daed4d3f47a3c134a37421fbf2`),

@@ -1,0 +1,37 @@
+{
+ "experiment": "Update 1 Base and Update 3 on the whole corpus (log entries 2026-11-01)",
+ "files": {
+  "data/corpus_u1_u3.json": "6081750121f91e24fdd7eb51b6e570cfa08c4b9d74d60c300e17fd210437c6db",
+  "data/corpus_u1_u3_bitrate.json": "7295f60271816612abd158bd4670929896c2e030793c7f6c8a40c280e10f12c8",
+  "data/corpus_u1_u3_heldout.json": "437a998e593a5d34e04fe174ca1eb844c1962ee39db069fc00cbb56dc1f36c41",
+  "data/corpus_u1_u3_posthoc.json": "3bfecaab6f186a12eb6cdaaac06999974e086c21a11588e6d86c8b198aa4a786",
+  "eval/corpus_u1_u3.py": "9add81309ba9403e9df6c4c220d31620f851bede140fd9d1488ba1d016789810",
+  "eval/corpus_u1_u3_bitrate.py": "81130e2e78a5632fb25288db6034aa053a052c6c1b16ba2b94d2a368d07950fd",
+  "eval/corpus_u1_u3_heldout.py": "7e90bb8fc9c5a8dcdf6c956bf0f761949390584effda8321f2f7bd73570b4d48",
+  "eval/corpus_u1_u3_posthoc.py": "f036061997cac32dfa7e43d703890db659481c8e69988f6779a00069f282df69",
+  "eval/corpus_u1_u3_report.py": "31a3300fe042f73ba5e637840d5c5d8bdc2ab46ce022f7970f7290b30a0a490c",
+  "PLAN.md": "a9bb95348ac76b68d610439b5d62057c34207ac808b7f6d455ed1e090872b3d1",
+  "PLAN_hu.md": "f3a0a0a646bf9f01442b0736f2b8ff86f9594b0071315bf5cbd605aa96036624",
+  "README.md": "ffbe37ac90cb25555457d69249f0834fe94bfb58ce564e639ff11424ec072f88"
+ },
+ "publication_edits": {
+  "eval/corpus_u1_u3.py": "as run; the corpus root replaced by <master>",
+  "eval/corpus_u1_u3_report.py": "as run",
+  "eval/corpus_u1_u3_heldout.py": "as run",
+  "eval/corpus_u1_u3_posthoc.py": "as run",
+  "eval/corpus_u1_u3_bitrate.py": "as run; the first line of the docstring corrected after the run (the two largest shifts are among the three highest bitrates, not the two highest)",
+  "data/corpus_u1_u3.json": "as written, except that the per-film frame and pair counts of the two-release films are removed (they would identify a film's length); the total stays",
+  "data/corpus_u1_u3_posthoc.json": "as written, except that the listed films' frame counts are rounded to thousands and their bitrates to whole Mbps",
+  "data/corpus_u1_u3_bitrate.json": "as written, except that the listed films' frame counts are rounded to thousands, their labelled counts to hundreds and their bitrates to whole Mbps",
+  "data/corpus_u1_u3_heldout.json": "as written, except that the per-film frame counts are rounded to thousands and the shot counts to tens",
+  "PLAN_hu.md": "the two log entries verbatim, under a heading added for publication",
+  "PLAN.md": "the English translation of PLAN_hu.md",
+  "README.md": "the report, written for publication"
+ },
+ "reruns": "The scripts need the non-public corpus database and the frame index, so they do not rerun outside the author's machine. The data files are their aggregate outputs.",
+ "line_ends": "the hashes are of the files with LF line ends",
+ "weights_sha256": {
+  "update3_small_p99_ep029.pt": "6cd68d831b63fdc5f8a6c02cef777c89fbd273daed4d3f47a3c134a37421fbf2",
+  "round3_base_p99_ep029.pt": "9840160f0c337fc1312c2566abf4231be0bd7ee709f65f489fd8f81c65b8d0e6"
+ }
+}

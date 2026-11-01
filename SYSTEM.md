@@ -1015,6 +1015,10 @@ in the original runs, 48,000 in Update 1 and Update 3.
   - Every model before Update 3 prefers I-frames when ranking (R4K-1). Update 3 cuts this on film to a third or
     less (5 s windows on AVC: 23–24× against 69–82× for Update 1 Small), but does not remove it. Its px also depend
     on the codec (Section 17).
+- **Tiers instead of one cut (proposed by the author):** below r98, r98–r95, r95–r90, from r90. Over the whole corpus
+  the VLM's blurred codes make up 0.6 / 4.2 / 12.0 / 71.8% of Update 3's labelled frames across them. The r95–r90 band is
+  the mixed one: neither a shot-level flag nor being the shot's best band separates its frames, a second model's band
+  does ([the comparison](experiments/u3_corpus_comparison/README.md)).
 - **Film with deliberate defocus, or a subject crop:** the frame threshold is the wrong tool. Use the cell map within
   a subject mask, or crop and re-score: the p99 scale is recomputed on the crop.
 - **Unknown video:** spot-check with the VLM. The extremes (lowest and highest scores) should agree almost 100%, and
@@ -1109,6 +1113,7 @@ labels.
 | Spearman with the measured motion, frame and cell level | whether the score and the map follow real motion | defocus, which has no motion |
 | photo ladder (300 unseen photos, 0–30 px, CRF 23) | the flip point, order inside 0–3 px, an exact scale | native blur; other codings |
 | two releases of a film | stability across bitrates | — |
+| two models over the whole corpus, at equal sharp share ([the comparison](experiments/u3_corpus_comparison/README.md)) | how they differ: thresholds, contradictions, what carries the score | which one is right, without a further witness |
 | seen against not-yet-seen training frames | memorisation | — |
 | codec tests (R4K-1 observational, R4K-2 controlled, a series in AVC / HEVC / AV1) | dependence on the coded frame type and the codec | — |
 | cross-test (each model on the others' input) | dependence on the representation | which cues are used |
@@ -1202,6 +1207,14 @@ labels.
   bit depth for Update 3; its encodes are second generation, from an HEVC source. Every training
   frame is H.264. Frames from other codecs, or the same film in several codecs, would be the next lever. Why x264
   coding raises the reading on film frames and not on photo clips is open.
+- **The sharp / blurred boundary on close-ups.** By the author's inspection, extreme close-ups and close-ups overlap there:
+  r90 keeps the good extreme close-ups and lets weak close-ups in; r98 rejects the former. Over the corpus, Update 3's frame score also
+  responds to the wide field of cells below logit 0, much more than Update 1 Base's. Whether a different frame rule or an
+  image-level score separates these frames better than the logit is not tested. Even a new score may only add one more
+  parameter, not a general rule. No reliable view label exists: the measurement rejected whole shots here, and in the first
+  trials the VLM's film views overlapped so much that they had to be merged.
+- **High bitrate.** On three corpus films above 23 Mbps, Update 3's field widens and its r98 share falls, while r90 does
+  not move (the comparison). Three films are a lead, not a result.
 - **Darkness:** input effect or real blur.
 - **Seed variation; warm-up-stable-decay against cosine** on the same data.
 - **Film language:** deliberate defocus, 24 fps, streaming codecs, HDR. Test the VLM questions there before relying
