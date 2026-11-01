@@ -1,5 +1,10 @@
 # Frame Blur Detection — Update 3
 
+![Frame Blur Detection — Update 3 infographic](figures/frame_blur_detection_update_3_poster_en.png)
+
+*The portrait in the infographic illustrates a frame of the test series, Young Royals, which is not training material.
+The training photos and frames are not published.*
+
 The fourth model of [Frame Blur Detection](https://github.com/mschauta/frame-blur-detection), after
 [Update 1](https://github.com/mschauta/frame-blur-detection-update-1) and
 [Update 2](https://github.com/mschauta/frame-blur-detection-update-2). The input is unchanged: the signed edge
